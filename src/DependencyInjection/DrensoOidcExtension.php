@@ -28,6 +28,7 @@ class DrensoOidcExtension extends ConfigurableExtension
   public const TOKEN_EXCHANGE_AUTHENTICATOR_ID = self::BASE_ID . 'token_exchange_authenticator';
   public const HTTP_CLIENT_FACTORY_ID          = self::BASE_ID . 'http_client_factory';
   public const HTTP_CLIENT_FACTORY_LOCATOR_ID  = self::BASE_ID . 'http_client_factory_locator';
+  public const HTTP_CLIENT_ID                  = self::BASE_ID . 'http_client';
 
   /** @param array<string, mixed> $mergedConfig */
   public function loadInternal(array $mergedConfig, ContainerBuilder $container): void

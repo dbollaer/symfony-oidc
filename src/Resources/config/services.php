@@ -12,6 +12,7 @@ use Drenso\OidcBundle\Security\OidcAuthenticator;
 use Drenso\OidcBundle\Security\OidcTokenExchangeAuthenticator;
 use Psr\Clock\ClockInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Http\HttpUtils;
 use Symfony\Contracts\Cache\CacheInterface;
@@ -63,5 +64,7 @@ return function (ContainerConfigurator $configurator): void {
     ->set(DrensoOidcExtension::HTTP_CLIENT_FACTORY_LOCATOR_ID, OidcHttpClientFactoryLocator::class)
     ->alias(OidcHttpClientFactoryLocator::class, DrensoOidcExtension::HTTP_CLIENT_FACTORY_LOCATOR_ID)
 
+    ->set(DrensoOidcExtension::HTTP_CLIENT_ID, HttpClient::class)
+    ->factory([HttpClient::class, 'create'])
   ;
 };
