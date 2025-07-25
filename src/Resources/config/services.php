@@ -58,6 +58,5 @@ return function (ContainerConfigurator $configurator): void {
       service(HttpClientInterface::class)->nullOnInvalid(),
       service(DrensoOidcExtension::SESSION_STORAGE_ID)->nullOnInvalid(),
     ])->abstract()
-
   ;
 };
