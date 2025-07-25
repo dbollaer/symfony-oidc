@@ -7,6 +7,7 @@ use Drenso\OidcBundle\OidcJwtHelper;
 use Drenso\OidcBundle\OidcSessionStorage;
 use Drenso\OidcBundle\OidcUrlFetcher;
 use Drenso\OidcBundle\Security\OidcAuthenticator;
+use Drenso\OidcBundle\Http\OidcHttpClientFactory;
 use Psr\Clock\ClockInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -46,5 +47,12 @@ return function (ContainerConfigurator $configurator): void {
 
     ->set(DrensoOidcExtension::CLIENT_LOCATOR_ID, OidcClientLocator::class)
     ->alias(OidcClientLocator::class, DrensoOidcExtension::CLIENT_LOCATOR_ID)
+
+    ->set(DrensoOidcExtension::HTTP_CLIENT_FACTORY_ID, OidcHttpClientFactory::class)
+    ->args([
+      service('http_client'),
+      service(DrensoOidcExtension::SESSION_STORAGE_ID),
+    ])
+    ->abstract()
   ;
 };

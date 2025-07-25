@@ -2,33 +2,33 @@
 
 namespace Drenso\OidcBundle\Security;
 
-use Drenso\OidcBundle\Exception\OidcConfigurationDisableUserInfoNotSupportedException;
-use Drenso\OidcBundle\Exception\OidcException;
-use Drenso\OidcBundle\Model\OidcUserData;
-use Drenso\OidcBundle\OidcClientInterface;
+use Lcobucci\JWT\UnencryptedToken;
 use Drenso\OidcBundle\OidcJwtHelper;
+use Drenso\OidcBundle\Model\OidcUserData;
 use Drenso\OidcBundle\OidcSessionStorage;
+use Drenso\OidcBundle\OidcClientInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Drenso\OidcBundle\Exception\OidcException;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Http\HttpUtils;
+use Drenso\OidcBundle\Security\Token\OidcToken;
+use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Security\Core\Exception\UserNotFoundException;
+use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
 use Drenso\OidcBundle\Security\Exception\OidcAuthenticationException;
 use Drenso\OidcBundle\Security\Exception\UnsupportedManagerException;
-use Drenso\OidcBundle\Security\Token\OidcToken;
 use Drenso\OidcBundle\Security\UserProvider\OidcUserProviderInterface;
-use Lcobucci\JWT\UnencryptedToken;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
-use Symfony\Component\Security\Core\Exception\UserNotFoundException;
-use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
+use Symfony\Component\Security\Http\Authenticator\Passport\PassportInterface;
+use Symfony\Component\Security\Http\Authenticator\Passport\Badge\RememberMeBadge;
+use Symfony\Component\Security\Http\EntryPoint\AuthenticationEntryPointInterface;
+use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
+use Symfony\Component\Security\Http\Authenticator\InteractiveAuthenticatorInterface;
+use Drenso\OidcBundle\Exception\OidcConfigurationDisableUserInfoNotSupportedException;
 use Symfony\Component\Security\Http\Authentication\AuthenticationFailureHandlerInterface;
 use Symfony\Component\Security\Http\Authentication\AuthenticationSuccessHandlerInterface;
-use Symfony\Component\Security\Http\Authenticator\InteractiveAuthenticatorInterface;
-use Symfony\Component\Security\Http\Authenticator\Passport\Badge\RememberMeBadge;
-use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
-use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
-use Symfony\Component\Security\Http\Authenticator\Passport\PassportInterface;
-use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
-use Symfony\Component\Security\Http\EntryPoint\AuthenticationEntryPointInterface;
-use Symfony\Component\Security\Http\HttpUtils;
 
 /**
  * @template-covariant TUser of UserInterface
@@ -95,6 +95,7 @@ class OidcAuthenticator implements InteractiveAuthenticatorInterface, Authentica
         } else {
           $userData = new OidcUserData([]);
         }
+     
       }
 
       // Look for the user identifier in either the id_token or the userinfo endpoint
@@ -125,6 +126,7 @@ class OidcAuthenticator implements InteractiveAuthenticatorInterface, Authentica
         $passport->addBadge((new RememberMeBadge())->enable());
         $this->sessionStorage->clearRememberMe();
       }
+      $this->sessionStorage->storeAccessToken($authData->getAccessToken());
 
       return $passport;
     } catch (OidcException $e) {
@@ -159,4 +161,5 @@ class OidcAuthenticator implements InteractiveAuthenticatorInterface, Authentica
   {
     return true;
   }
+
 }

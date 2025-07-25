@@ -87,6 +87,10 @@ class Configuration implements ConfigurationInterface
                 ->scalarNode('scope')
                   ->defaultNull()
                 ->end() // scope
+                ->booleanNode('enable_http_client')
+                  ->defaultFalse()
+                  ->info('Enable generation of an HttpClientInterface with the access token set for this client')
+                ->end() // enable_http_client
               ->end() // array prototype children
             ->end() // array prototype
           ->end() // clients

@@ -3,6 +3,9 @@
 namespace Drenso\OidcBundle\DependencyInjection;
 
 use Drenso\OidcBundle\OidcClientInterface;
+use Drenso\OidcBundle\Http\OidcHttpClientFactory;
+use Drenso\OidcBundle\Http\OidcHttpClientFactoryInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;
@@ -22,6 +25,7 @@ class DrensoOidcExtension extends ConfigurableExtension
   public const CLIENT_LOCATOR_ID               = self::BASE_ID . 'client_locator';
   public const END_SESSION_LISTENER_ID         = self::BASE_ID . 'end_session_listener';
   public const TOKEN_EXCHANGE_AUTHENTICATOR_ID = self::BASE_ID . 'token_exchange_authenticator';
+  public const HTTP_CLIENT_FACTORY_ID          = self::BASE_ID . 'http_client_factory';
 
   /** @param array<string, mixed> $mergedConfig */
   public function loadInternal(array $mergedConfig, ContainerBuilder $container): void
@@ -34,6 +38,15 @@ class DrensoOidcExtension extends ConfigurableExtension
     $clientServices = [];
     foreach ($mergedConfig['clients'] as $clientName => $clientConfig) {
       $clientServices[$clientName] = $this->registerClient($container, $clientName, $clientConfig);
+
+      // Register OIDC HTTP client factory if enabled
+      if (!empty($clientConfig['enable_http_client'])) {
+        $factoryServiceId = sprintf('drenso.oidc.http_client_factory.%s', $clientName);
+        $container
+          ->register($factoryServiceId, OidcHttpClientFactory::class)
+          ->addArgument(new Reference(HttpClientInterface::class));
+        $container->registerAliasForArgument($factoryServiceId, OidcHttpClientFactoryInterface::class, sprintf('%sOidcHttpClientFactory', $clientName));
+      }
     }
 
     // Setup default alias
