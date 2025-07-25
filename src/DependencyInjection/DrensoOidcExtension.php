@@ -13,14 +13,15 @@ use Symfony\Component\HttpKernel\DependencyInjection\ConfigurableExtension;
 
 class DrensoOidcExtension extends ConfigurableExtension
 {
-  public const BASE_ID                  = 'drenso.oidc.';
-  public const AUTHENTICATOR_ID         = self::BASE_ID . 'authenticator';
-  public const URL_FETCHER_ID           = self::BASE_ID . 'url_fetcher';
-  public const JWT_HELPER_ID            = self::BASE_ID . 'jwt_helper';
-  public const SESSION_STORAGE_ID       = self::BASE_ID . 'session_storage';
-  public const CLIENT_ID                = self::BASE_ID . 'client';
-  public const CLIENT_LOCATOR_ID        = self::BASE_ID . 'client_locator';
-  public const END_SESSION_LISTENER_ID  = self::BASE_ID . 'end_session_listener';
+  public const BASE_ID                         = 'drenso.oidc.';
+  public const AUTHENTICATOR_ID                = self::BASE_ID . 'authenticator';
+  public const URL_FETCHER_ID                  = self::BASE_ID . 'url_fetcher';
+  public const JWT_HELPER_ID                   = self::BASE_ID . 'jwt_helper';
+  public const SESSION_STORAGE_ID              = self::BASE_ID . 'session_storage';
+  public const CLIENT_ID                       = self::BASE_ID . 'client';
+  public const CLIENT_LOCATOR_ID               = self::BASE_ID . 'client_locator';
+  public const END_SESSION_LISTENER_ID         = self::BASE_ID . 'end_session_listener';
+  public const TOKEN_EXCHANGE_AUTHENTICATOR_ID = self::BASE_ID . 'token_exchange_authenticator';
 
   /** @param array<string, mixed> $mergedConfig */
   public function loadInternal(array $mergedConfig, ContainerBuilder $container): void
@@ -86,7 +87,9 @@ class DrensoOidcExtension extends ConfigurableExtension
       ->addArgument($config['remember_me_parameter'])
       ->addArgument($wellKnownParserId ? new Reference($wellKnownParserId) : null)
       ->addArgument($config['code_challenge_method'])
-      ->addArgument($config['disable_nonce']);
+      ->addArgument($config['disable_nonce'])
+      ->addArgument($config['audience'])
+      ->addArgument($config['scope']);
 
     $container
       ->registerAliasForArgument($clientId, OidcClientInterface::class, sprintf('%sOidcClient', $name));

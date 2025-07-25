@@ -81,6 +81,12 @@ class Configuration implements ConfigurationInterface
                 ->booleanNode('disable_nonce')
                   ->defaultFalse()
                 ->end() // disable_nonce
+                ->scalarNode('audience')
+                  ->defaultNull()
+                ->end() // audience
+                ->scalarNode('scope')
+                  ->defaultNull()
+                ->end() // scope
               ->end() // array prototype children
             ->end() // array prototype
           ->end() // clients

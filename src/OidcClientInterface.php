@@ -26,6 +26,13 @@ interface OidcClientInterface
   public function authenticate(Request $request): OidcTokens;
 
   /**
+   * Authenticate authenticate access token using token exchange.
+   *
+   * @throws OidcException
+   */
+  public function authenticateTokenExchange(Request $request): OidcTokens;
+
+  /**
    * Use an existing refresh token to retrieve new tokens from the OIDC provider.
    *
    * @throws OidcException
@@ -37,7 +44,7 @@ interface OidcClientInterface
    *
    * @throws OidcException
    */
-  public function exchangeTokens(string $accessToken, ?string $targetScope = null, ?string $targetAudience = null): OidcTokens;
+  public function exchangeTokens(string $accessToken, ?string $targetScope = null, ?string $targetAudience = null, ?string $subjectTokenType = null): OidcTokens;
 
   /**
    * Create the redirect that should be followed in order to authorize.

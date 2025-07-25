@@ -19,6 +19,7 @@ use RuntimeException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Http\HttpUtils;
 use Symfony\Component\String\Slugger\AsciiSlugger;
 use Symfony\Contracts\Cache\CacheInterface;
@@ -56,7 +57,9 @@ class OidcClient implements OidcClientInterface
     private readonly string $rememberMeParameter,
     protected ?OidcWellKnownParserInterface $wellKnownParser = null,
     private readonly ?string $codeChallengeMethod = null,
-    private readonly bool $disableNonce = false)
+    private readonly bool $disableNonce = false,
+    private readonly ?string $audience = null,
+    private readonly ?string $scope = null)
   {
     if (!$this->wellKnownUrl || filter_var($this->wellKnownUrl, FILTER_VALIDATE_URL) === false) {
       throw new LogicException(sprintf('Invalid well known url (%s) for OIDC', $this->wellKnownUrl));
@@ -99,6 +102,33 @@ class OidcClient implements OidcClientInterface
     );
   }
 
+  public function authenticateTokenExchange(Request $request): OidcTokens
+  {
+    $authHeader = $request->headers->get('Authorization');
+    if (!is_string($authHeader) || !str_starts_with(trim($authHeader), 'Bearer ')) {
+      throw new AuthenticationException('No Bearer token found in Authorization header.');
+    }
+    $accessToken = trim(substr($authHeader, 7));
+    if ($accessToken === '') {
+      throw new AuthenticationException('Bearer token is empty.');
+    }
+
+    // Clear session after check
+    $this->sessionStorage->clearState();
+
+    // Request and verify the tokens
+    return $this->verifyTokens(
+      $this->requestTokens(
+        'urn:ietf:params:oauth:grant-type:token-exchange',
+        subjectToken: $accessToken,
+        scope: $this->scope,
+        audience: $this->audience,
+        subjectTokenType: 'urn:ietf:params:oauth:token-type:access_token',
+      ),
+      verifyNonce: !$this->disableNonce
+    );
+  }
+
   public function refreshTokens(string $refreshToken, ?string $targetScope = null): OidcTokens
   {
     // Clear session after check
@@ -115,7 +145,7 @@ class OidcClient implements OidcClientInterface
     );
   }
 
-  public function exchangeTokens(string $accessToken, ?string $targetScope = null, ?string $targetAudience = null): OidcTokens
+  public function exchangeTokens(string $accessToken, ?string $targetScope = null, ?string $targetAudience = null, ?string $subjectTokenType = null): OidcTokens
   {
     // Clear session after check
     $this->sessionStorage->clearState();
@@ -126,7 +156,8 @@ class OidcClient implements OidcClientInterface
         'urn:ietf:params:oauth:grant-type:token-exchange',
         subjectToken: $accessToken,
         scope: $targetScope,
-        audience: $targetAudience
+        audience: $targetAudience,
+        subjectTokenType: $subjectTokenType,
       )
     );
     $this->jwtHelper->verifyAccessToken($this->getIssuer(), $this->getJwksUri(), $tokens, false);
@@ -493,8 +524,9 @@ class OidcClient implements OidcClientInterface
     ?string $refreshToken = null,
     ?string $subjectToken = null,
     ?string $scope = null,
-    ?string $audience = null): UnvalidatedOidcTokens
-  {
+    ?string $audience = null,
+    ?string $subjectTokenType = null,
+  ): UnvalidatedOidcTokens {
     $params = [
       'grant_type'    => $grantType,
       'client_id'     => $this->clientId,
@@ -531,6 +563,10 @@ class OidcClient implements OidcClientInterface
 
     if (null !== $subjectToken) {
       $params['subject_token'] = $subjectToken;
+    }
+
+    if (null !== $subjectTokenType) {
+      $params['subject_token_type'] = $subjectTokenType;
     }
 
     if (null !== $scope) {
