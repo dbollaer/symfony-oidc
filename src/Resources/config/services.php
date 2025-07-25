@@ -1,6 +1,7 @@
 <?php
 
 use Drenso\OidcBundle\DependencyInjection\DrensoOidcExtension;
+use Drenso\OidcBundle\Http\OidcHttpClientFactory;
 use Drenso\OidcBundle\OidcClient;
 use Drenso\OidcBundle\OidcClientLocator;
 use Drenso\OidcBundle\OidcJwtHelper;
@@ -8,12 +9,12 @@ use Drenso\OidcBundle\OidcSessionStorage;
 use Drenso\OidcBundle\OidcUrlFetcher;
 use Drenso\OidcBundle\Security\OidcAuthenticator;
 use Drenso\OidcBundle\Security\OidcTokenExchangeAuthenticator;
-use Drenso\OidcBundle\Http\OidcHttpClientFactory;
 use Psr\Clock\ClockInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Http\HttpUtils;
 use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
@@ -54,9 +55,10 @@ return function (ContainerConfigurator $configurator): void {
 
     ->set(DrensoOidcExtension::HTTP_CLIENT_FACTORY_ID, OidcHttpClientFactory::class)
     ->args([
-      service('http_client'),
-      service(DrensoOidcExtension::SESSION_STORAGE_ID),
+      service(HttpClientInterface::class)->nullOnInvalid(),
+      service(DrensoOidcExtension::SESSION_STORAGE_ID)->nullOnInvalid(),
     ])
-    ->abstract()
+    ->alias(OidcHttpClientFactory::class, DrensoOidcExtension::HTTP_CLIENT_FACTORY_ID)
+
   ;
 };
