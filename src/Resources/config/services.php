@@ -7,6 +7,7 @@ use Drenso\OidcBundle\OidcJwtHelper;
 use Drenso\OidcBundle\OidcSessionStorage;
 use Drenso\OidcBundle\OidcUrlFetcher;
 use Drenso\OidcBundle\Security\OidcAuthenticator;
+use Drenso\OidcBundle\Security\OidcTokenExchangeAuthenticator;
 use Drenso\OidcBundle\Http\OidcHttpClientFactory;
 use Psr\Clock\ClockInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -43,6 +44,9 @@ return function (ContainerConfigurator $configurator): void {
       service(HttpUtils::class),
       service(CacheInterface::class)->nullOnInvalid(),
     ])
+    ->abstract()
+
+    ->set(DrensoOidcExtension::TOKEN_EXCHANGE_AUTHENTICATOR_ID, OidcTokenExchangeAuthenticator::class)
     ->abstract()
 
     ->set(DrensoOidcExtension::CLIENT_LOCATOR_ID, OidcClientLocator::class)
