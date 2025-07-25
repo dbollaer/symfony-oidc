@@ -5,6 +5,7 @@ namespace Drenso\OidcBundle\DependencyInjection;
 use Drenso\OidcBundle\OidcClientInterface;
 use Drenso\OidcBundle\Http\OidcHttpClientFactory;
 use Drenso\OidcBundle\Http\OidcHttpClientFactoryInterface;
+use Drenso\OidcBundle\Http\OidcHttpClientFactoryLocator;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ChildDefinition;
@@ -26,6 +27,7 @@ class DrensoOidcExtension extends ConfigurableExtension
   public const END_SESSION_LISTENER_ID         = self::BASE_ID . 'end_session_listener';
   public const TOKEN_EXCHANGE_AUTHENTICATOR_ID = self::BASE_ID . 'token_exchange_authenticator';
   public const HTTP_CLIENT_FACTORY_ID          = self::BASE_ID . 'http_client_factory';
+  public const HTTP_CLIENT_FACTORY_LOCATOR_ID  = self::BASE_ID . 'http_client_factory_locator';
 
   /** @param array<string, mixed> $mergedConfig */
   public function loadInternal(array $mergedConfig, ContainerBuilder $container): void
@@ -36,6 +38,7 @@ class DrensoOidcExtension extends ConfigurableExtension
 
     // Load the configured clients
     $clientServices = [];
+    $httpClientFactoryServices = [];
     foreach ($mergedConfig['clients'] as $clientName => $clientConfig) {
       $clientServices[$clientName] = $this->registerClient($container, $clientName, $clientConfig);
 
@@ -48,6 +51,8 @@ class DrensoOidcExtension extends ConfigurableExtension
           ->addArgument(new Reference(HttpClientInterface::class))
           ->addArgument(new Reference($sessionStorageId));
         $container->registerAliasForArgument($factoryServiceId, OidcHttpClientFactoryInterface::class, sprintf('%sOidcHttpClientFactory', $clientName));
+        
+        $httpClientFactoryServices[$clientName] = new Reference($factoryServiceId);
       }
     }
 
@@ -62,6 +67,14 @@ class DrensoOidcExtension extends ConfigurableExtension
       ->getDefinition(self::CLIENT_LOCATOR_ID)
       ->addArgument(ServiceLocatorTagPass::register($container, $clientServices))
       ->addArgument($mergedConfig['default_client']);
+
+    // Configure HTTP client factory locator
+    if (!empty($httpClientFactoryServices)) {
+      $container
+        ->getDefinition(self::HTTP_CLIENT_FACTORY_LOCATOR_ID)
+        ->addArgument(ServiceLocatorTagPass::register($container, $httpClientFactoryServices))
+        ->addArgument($mergedConfig['default_client']);
+    }
   }
 
   /** @param array<string, mixed> $config */

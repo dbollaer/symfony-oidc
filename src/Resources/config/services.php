@@ -2,6 +2,7 @@
 
 use Drenso\OidcBundle\DependencyInjection\DrensoOidcExtension;
 use Drenso\OidcBundle\Http\OidcHttpClientFactory;
+use Drenso\OidcBundle\Http\OidcHttpClientFactoryLocator;
 use Drenso\OidcBundle\OidcClient;
 use Drenso\OidcBundle\OidcClientLocator;
 use Drenso\OidcBundle\OidcJwtHelper;
@@ -58,5 +59,9 @@ return function (ContainerConfigurator $configurator): void {
       service(HttpClientInterface::class)->nullOnInvalid(),
       service(DrensoOidcExtension::SESSION_STORAGE_ID)->nullOnInvalid(),
     ])->abstract()
+
+    ->set(DrensoOidcExtension::HTTP_CLIENT_FACTORY_LOCATOR_ID, OidcHttpClientFactoryLocator::class)
+    ->alias(OidcHttpClientFactoryLocator::class, DrensoOidcExtension::HTTP_CLIENT_FACTORY_LOCATOR_ID)
+
   ;
 };
