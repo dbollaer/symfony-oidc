@@ -41,10 +41,10 @@ class DrensoOidcExtension extends ConfigurableExtension
 
       // Register OIDC HTTP client factory if enabled
       if (!empty($clientConfig['enable_http_client'])) {
-        $factoryServiceId = sprintf('drenso.oidc.http_client_factory.%s', $clientName);
+        $factoryServiceId = sprintf('%s.%s', self::HTTP_CLIENT_FACTORY_ID, $clientName);
         $sessionStorageId = sprintf('%s.%s', self::SESSION_STORAGE_ID, $clientName);
         $container
-          ->register($factoryServiceId, OidcHttpClientFactory::class)
+          ->setDefinition($factoryServiceId, new ChildDefinition(self::HTTP_CLIENT_FACTORY_ID))
           ->addArgument(new Reference(HttpClientInterface::class))
           ->addArgument(new Reference($sessionStorageId));
         $container->registerAliasForArgument($factoryServiceId, OidcHttpClientFactoryInterface::class, sprintf('%sOidcHttpClientFactory', $clientName));
