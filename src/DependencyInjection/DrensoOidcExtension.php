@@ -2,11 +2,9 @@
 
 namespace Drenso\OidcBundle\DependencyInjection;
 
-use Drenso\OidcBundle\OidcClientInterface;
 use Drenso\OidcBundle\Http\OidcHttpClientFactory;
 use Drenso\OidcBundle\Http\OidcHttpClientFactoryInterface;
-use Drenso\OidcBundle\Http\OidcHttpClientFactoryLocator;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Drenso\OidcBundle\OidcClientInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;
@@ -14,6 +12,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\DependencyInjection\ConfigurableExtension;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class DrensoOidcExtension extends ConfigurableExtension
 {
@@ -38,7 +37,7 @@ class DrensoOidcExtension extends ConfigurableExtension
     $loader->load('services.php');
 
     // Load the configured clients
-    $clientServices = [];
+    $clientServices            = [];
     $httpClientFactoryServices = [];
     foreach ($mergedConfig['clients'] as $clientName => $clientConfig) {
       $clientServices[$clientName] = $this->registerClient($container, $clientName, $clientConfig);
@@ -50,14 +49,15 @@ class DrensoOidcExtension extends ConfigurableExtension
         $container
           ->register($factoryServiceId, OidcHttpClientFactory::class)
           ->addArgument(new Reference(HttpClientInterface::class))
-          ->addArgument(new Reference($sessionStorageId));
+          ->addArgument(new Reference($sessionStorageId))
+          ->addArgument(new Reference(sprintf('drenso.oidc.client.%s', $clientName)))
+          ->addArgument($clientConfig['scope'])
+          ->addArgument($clientConfig['audience']);
         $container->registerAliasForArgument($factoryServiceId, OidcHttpClientFactoryInterface::class, sprintf('%sOidcHttpClientFactory', $clientName));
-        
+
         $httpClientFactoryServices[$clientName] = new Reference($factoryServiceId);
       }
     }
-
-
 
     // Setup default alias
     $container

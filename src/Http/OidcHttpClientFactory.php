@@ -2,14 +2,21 @@
 
 namespace Drenso\OidcBundle\Http;
 
+use Drenso\OidcBundle\Exception\OidcException;
+use Drenso\OidcBundle\OidcClient;
 use Drenso\OidcBundle\OidcSessionStorage;
 use LogicException;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class OidcHttpClientFactory implements OidcHttpClientFactoryInterface
 {
-  public function __construct(private ?HttpClientInterface $httpClient, private ?OidcSessionStorage $sessionStorage)
-  {
+  public function __construct(
+    private ?HttpClientInterface $httpClient,
+    private ?OidcSessionStorage $sessionStorage,
+    private OidcClient $oidcClient,
+    private string $scope,
+    private string $audience,
+  ) {
   }
 
   public function createHttpClientWithToken(): HttpClientInterface
@@ -21,10 +28,21 @@ class OidcHttpClientFactory implements OidcHttpClientFactoryInterface
       throw new LogicException('Session storage is not set.');
     }
 
-    return $this->httpClient->withOptions([
-      'headers' => [
-        'Authorization' => 'Bearer ' . $this->sessionStorage->getAccessToken(),
-      ],
-    ]);
+    try {
+      $tokens = $this->oidcClient->exchangeTokens(
+        accessToken: $this->sessionStorage->getAccessToken(),
+        targetScope: $this->scope,
+        targetAudience: $this->audience,
+        subjectTokenType: 'urn:ietf:params:oauth:token-type:access_token'
+      );
+
+      return $this->httpClient->withOptions([
+        'headers' => [
+          'Authorization' => 'Bearer ' . $tokens->getAccessToken(),
+        ],
+      ]);
+    } catch (OidcException $e) {
+      throw new LogicException('Failed to exchange tokens: ' . $e->getMessage());
+    }
   }
 }
