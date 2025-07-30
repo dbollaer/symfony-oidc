@@ -2,28 +2,29 @@
 
 namespace Drenso\OidcBundle;
 
-use Drenso\OidcBundle\Enum\OidcTokenType;
-use Drenso\OidcBundle\Exception\OidcCodeChallengeMethodNotSupportedException;
-use Drenso\OidcBundle\Exception\OidcConfigurationException;
-use Drenso\OidcBundle\Exception\OidcConfigurationResolveException;
-use Drenso\OidcBundle\Exception\OidcException;
-use Drenso\OidcBundle\Model\OidcIntrospectionData;
-use Drenso\OidcBundle\Model\OidcTokens;
-use Drenso\OidcBundle\Model\OidcUserData;
-use Drenso\OidcBundle\Model\UnvalidatedOidcTokens;
-use Drenso\OidcBundle\Security\Exception\OidcAuthenticationException;
 use Exception;
-use InvalidArgumentException;
 use LogicException;
 use RuntimeException;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\Security\Core\Exception\AuthenticationException;
-use Symfony\Component\Security\Http\HttpUtils;
-use Symfony\Component\String\Slugger\AsciiSlugger;
-use Symfony\Contracts\Cache\CacheInterface;
+use InvalidArgumentException;
+use Drenso\OidcBundle\Model\OidcTokens;
+use Drenso\OidcBundle\Enum\OidcTokenType;
+use Drenso\OidcBundle\Model\AccessTokens;
+use Drenso\OidcBundle\Model\OidcUserData;
 use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Drenso\OidcBundle\Exception\OidcException;
+use Symfony\Component\Security\Http\HttpUtils;
+use Drenso\OidcBundle\Model\OidcIntrospectionData;
+use Drenso\OidcBundle\Model\UnvalidatedOidcTokens;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\String\Slugger\AsciiSlugger;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Drenso\OidcBundle\Exception\OidcConfigurationException;
+use Drenso\OidcBundle\Exception\OidcConfigurationResolveException;
+use Drenso\OidcBundle\Security\Exception\OidcAuthenticationException;
+use Symfony\Component\Security\Core\Exception\AuthenticationException;
+use Drenso\OidcBundle\Exception\OidcCodeChallengeMethodNotSupportedException;
 
 /**
  * This class implements the Oidc protocol.
@@ -129,6 +130,20 @@ class OidcClient implements OidcClientInterface
     );
   }
 
+  public function exchangeToken(string $accessToken): OidcTokens
+  {
+    return $this->verifyTokens(
+      $this->requestTokens(
+        'urn:ietf:params:oauth:grant-type:token-exchange',
+        subjectToken: $accessToken,
+        scope: $this->scope,
+        audience: $this->audience,
+        subjectTokenType: 'urn:ietf:params:oauth:token-type:access_token',
+      ),
+      verifyNonce: !$this->disableNonce
+    );
+  }
+
   public function refreshTokens(string $refreshToken, ?string $targetScope = null): OidcTokens
   {
     // Clear session after check
@@ -145,19 +160,19 @@ class OidcClient implements OidcClientInterface
     );
   }
 
-  public function exchangeTokens(string $accessToken, ?string $targetScope = null, ?string $targetAudience = null, ?string $subjectTokenType = null): OidcTokens
+  public function exchangeTokens(string $accessToken, ?string $targetScope = null, ?string $targetAudience = null, ?string $subjectTokenType = null): AccessTokens
   {
     // Clear session after check
     $this->sessionStorage->clearState();
 
     // Request and verify exchange tokens
-    $tokens = new OidcTokens(
+    $tokens = new AccessTokens(
       $this->requestTokens(
         'urn:ietf:params:oauth:grant-type:token-exchange',
         subjectToken: $accessToken,
         scope: $targetScope,
         audience: $targetAudience,
-        subjectTokenType: $subjectTokenType,
+        subjectTokenType: 'urn:ietf:params:oauth:token-type:access_token',
       )
     );
     $this->jwtHelper->verifyAccessToken($this->getIssuer(), $this->getJwksUri(), $tokens, false);
@@ -576,6 +591,8 @@ class OidcClient implements OidcClientInterface
     if (null !== $audience) {
       $params['audience'] = $audience;
     }
+
+    //dd($params, $headers, $this->getTokenEndpoint());
 
     $jsonToken = json_decode($this->urlFetcher->fetchUrl($this->getTokenEndpoint(), $params, $headers));
 

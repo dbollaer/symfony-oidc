@@ -2,16 +2,17 @@
 
 namespace Drenso\OidcBundle;
 
+use Drenso\OidcBundle\Model\OidcTokens;
 use Drenso\OidcBundle\Enum\OidcTokenType;
-use Drenso\OidcBundle\Exception\OidcCodeChallengeMethodNotSupportedException;
-use Drenso\OidcBundle\Exception\OidcConfigurationException;
-use Drenso\OidcBundle\Exception\OidcConfigurationResolveException;
+use Drenso\OidcBundle\Model\AccessTokens;
+use Drenso\OidcBundle\Model\OidcUserData;
+use Symfony\Component\HttpFoundation\Request;
 use Drenso\OidcBundle\Exception\OidcException;
 use Drenso\OidcBundle\Model\OidcIntrospectionData;
-use Drenso\OidcBundle\Model\OidcTokens;
-use Drenso\OidcBundle\Model\OidcUserData;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Request;
+use Drenso\OidcBundle\Exception\OidcConfigurationException;
+use Drenso\OidcBundle\Exception\OidcConfigurationResolveException;
+use Drenso\OidcBundle\Exception\OidcCodeChallengeMethodNotSupportedException;
 
 /**
  * This class implements the Oidc protocol.
@@ -44,7 +45,7 @@ interface OidcClientInterface
    *
    * @throws OidcException
    */
-  public function exchangeTokens(string $accessToken, ?string $targetScope = null, ?string $targetAudience = null, ?string $subjectTokenType = null): OidcTokens;
+  public function exchangeTokens(string $accessToken, ?string $targetScope = null, ?string $targetAudience = null, ?string $subjectTokenType = null): AccessTokens;
 
   /**
    * Create the redirect that should be followed in order to authorize.

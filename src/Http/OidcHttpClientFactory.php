@@ -28,7 +28,6 @@ class OidcHttpClientFactory implements OidcHttpClientFactoryInterface
       throw new LogicException('Session storage is not set.');
     }
 
-    try {
       $tokens = $this->oidcClient->exchangeTokens(
         accessToken: $this->sessionStorage->getAccessToken(),
         targetScope: $this->scope,
@@ -41,8 +40,7 @@ class OidcHttpClientFactory implements OidcHttpClientFactoryInterface
           'Authorization' => 'Bearer ' . $tokens->getAccessToken(),
         ],
       ]);
-    } catch (OidcException $e) {
-      throw new LogicException('Failed to exchange tokens: ' . $e->getMessage());
-    }
+
   }
 }
+
