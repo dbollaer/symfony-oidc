@@ -595,15 +595,6 @@ class OidcClient implements OidcClientInterface
 
 
     $jsonToken = json_decode($this->urlFetcher->fetchUrl($this->getTokenEndpoint(), $params, $headers));
-    $accessToken = $jsonToken->access_token;
-    if(null !== $accessToken){
-      dd($params, $headers, $this->getTokenEndpoint(), $jsonToken, $accessToken, $this->clientId, $this->clientSecret);
-
-    }
-    $jsonToken2 = json_decode($this->urlFetcher->fetchUrl($this->getTokenEndpoint(), $params, $headers));
-
-    dd($params, $headers, $this->getTokenEndpoint(), $jsonToken, $jsonToken2, $this->clientId, $this->clientSecret);
-
     // Throw an error if the server returns one
     if (isset($jsonToken->error)) {
       if (isset($jsonToken->error_description)) {
