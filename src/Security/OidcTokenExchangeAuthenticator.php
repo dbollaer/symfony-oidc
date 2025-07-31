@@ -71,12 +71,7 @@ class OidcTokenExchangeAuthenticator implements AuthenticatorInterface
 
 
       // Get user information from introspection data
-      $userData = new OidcUserData([
-        'sub' => $introspectionData->getSub(),
-        'iss' => $introspectionData->getIss(),
-        'aud' => $introspectionData->getAud(),
-        'scope' => $introspectionData->getScope(),
-      ]);
+      $userData = new OidcUserData($introspectionData->getIntrospectionDataArray());
 
     
       $userIdentifier = $introspectionData->getSub();
