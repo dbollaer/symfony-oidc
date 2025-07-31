@@ -52,7 +52,9 @@ class DrensoOidcExtension extends ConfigurableExtension
           ->addArgument(new Reference($sessionStorageId))
           ->addArgument(new Reference(sprintf('drenso.oidc.client.%s', $clientName)))
           ->addArgument($clientConfig['scope'])
-          ->addArgument($clientConfig['audience']);
+          ->addArgument($clientConfig['audience'])
+          ->addArgument(new Reference('cache.app'))
+          ->addArgument($clientConfig['http_client_factory_cache_time']);
         $container->registerAliasForArgument($factoryServiceId, OidcHttpClientFactoryInterface::class, sprintf('%sOidcHttpClientFactory', $clientName));
 
         $httpClientFactoryServices[$clientName] = new Reference($factoryServiceId);

@@ -172,9 +172,10 @@ class OidcClient implements OidcClientInterface
         subjectToken: $accessToken,
         scope: $targetScope,
         audience: $targetAudience,
-        subjectTokenType: 'urn:ietf:params:oauth:token-type:access_token',
+        subjectTokenType: $subjectTokenType ?? 'urn:ietf:params:oauth:token-type:access_token',
       )
     );
+
     $this->jwtHelper->verifyAccessToken($this->getIssuer(), $this->getJwksUri(), $tokens, false);
 
     return $tokens;
@@ -592,9 +593,16 @@ class OidcClient implements OidcClientInterface
       $params['audience'] = $audience;
     }
 
-    //dd($params, $headers, $this->getTokenEndpoint());
 
     $jsonToken = json_decode($this->urlFetcher->fetchUrl($this->getTokenEndpoint(), $params, $headers));
+    $accessToken = $jsonToken->access_token;
+    if(null !== $accessToken){
+      dd($params, $headers, $this->getTokenEndpoint(), $jsonToken, $accessToken, $this->clientId, $this->clientSecret);
+
+    }
+    $jsonToken2 = json_decode($this->urlFetcher->fetchUrl($this->getTokenEndpoint(), $params, $headers));
+
+    dd($params, $headers, $this->getTokenEndpoint(), $jsonToken, $jsonToken2, $this->clientId, $this->clientSecret);
 
     // Throw an error if the server returns one
     if (isset($jsonToken->error)) {

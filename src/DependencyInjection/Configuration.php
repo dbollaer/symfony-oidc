@@ -91,6 +91,14 @@ class Configuration implements ConfigurationInterface
                   ->defaultFalse()
                   ->info('Enable generation of an HttpClientInterface with the access token set for this client')
                 ->end() // enable_http_client
+                ->scalarNode('http_client_factory_cache_time')
+                  ->defaultValue(3600)
+                  ->info('Cache time in seconds for HTTP client factory token exchange')
+                  ->validate()
+                    ->ifTrue(fn ($value) => $value !== null && !is_int($value))
+                    ->thenInvalid('Must be either null or an integer value')
+                  ->end()
+                ->end() // http_client_factory_cache_time
               ->end() // array prototype children
             ->end() // array prototype
           ->end() // clients

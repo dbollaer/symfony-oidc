@@ -17,7 +17,7 @@ class AccessTokens extends UnvalidatedOidcTokens
         throw new OidcException('Invalid token object.' . var_export($tokens,true));
       }
     } else {
-      if (!isset($tokens->id_token) || !isset($tokens->access_token)) {
+      if (!isset($tokens->access_token)) {
         throw new OidcException('Invalid token object.');
       }
     }

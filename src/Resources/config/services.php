@@ -59,6 +59,11 @@ return function (ContainerConfigurator $configurator): void {
     ->args([
       service(HttpClientInterface::class)->nullOnInvalid(),
       service(DrensoOidcExtension::SESSION_STORAGE_ID)->nullOnInvalid(),
+      service(DrensoOidcExtension::CLIENT_ID)->nullOnInvalid(),
+      '%drenso_oidc.clients.default.scope%',
+      '%drenso_oidc.clients.default.audience%',
+      service(CacheInterface::class)->nullOnInvalid(),
+      '%drenso_oidc.clients.default.http_client_factory_cache_time%',
     ])->abstract()
 
     ->set(DrensoOidcExtension::HTTP_CLIENT_FACTORY_LOCATOR_ID, OidcHttpClientFactoryLocator::class)
