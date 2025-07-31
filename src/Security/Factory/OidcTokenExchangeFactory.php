@@ -2,13 +2,14 @@
 
 namespace Drenso\OidcBundle\Security\Factory;
 
+use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\DependencyInjection\ChildDefinition;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Drenso\OidcBundle\DependencyInjection\DrensoOidcExtension;
 use Drenso\OidcBundle\Security\Exception\UnsupportedManagerException;
 use Symfony\Bundle\SecurityBundle\DependencyInjection\Security\Factory\AbstractFactory;
 use Symfony\Bundle\SecurityBundle\DependencyInjection\Security\Factory\AuthenticatorFactoryInterface;
-use Symfony\Component\DependencyInjection\ChildDefinition;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Reference;
 
 class OidcTokenExchangeFactory extends AbstractFactory implements AuthenticatorFactoryInterface
 {
@@ -49,7 +50,8 @@ class OidcTokenExchangeFactory extends AbstractFactory implements AuthenticatorF
       ->setDefinition($tokenExchangeAuthenticatorId, new ChildDefinition(DrensoOidcExtension::TOKEN_EXCHANGE_AUTHENTICATOR_ID))
       ->addArgument($clientReference)
       ->addArgument(new Reference($userProviderId))
-      ->addArgument($config['user_identifier_property']);
+      ->addArgument($config['user_identifier_property'])
+      ->addArgument(new Reference(LoggerInterface::class));
 
     return $tokenExchangeAuthenticatorId;
   }

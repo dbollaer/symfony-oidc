@@ -2,21 +2,22 @@
 
 namespace Drenso\OidcBundle\Security;
 
-use Drenso\OidcBundle\Exception\OidcException;
+use Psr\Log\LoggerInterface;
+use Drenso\OidcBundle\OidcJwtHelper;
 use Drenso\OidcBundle\Model\OidcUserData;
 use Drenso\OidcBundle\OidcClientInterface;
-use Drenso\OidcBundle\OidcJwtHelper;
-use Drenso\OidcBundle\Security\Exception\OidcAuthenticationException;
-use Drenso\OidcBundle\Security\Token\OidcToken;
-use Drenso\OidcBundle\Security\UserProvider\OidcUserProviderInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Drenso\OidcBundle\Exception\OidcException;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
-use Symfony\Component\Security\Core\Exception\AuthenticationException;
+use Drenso\OidcBundle\Security\Token\OidcToken;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
+use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
+use Drenso\OidcBundle\Security\Exception\OidcAuthenticationException;
+use Drenso\OidcBundle\Security\UserProvider\OidcUserProviderInterface;
+use Symfony\Component\Security\Core\Exception\AuthenticationException;
+use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Http\Authenticator\AuthenticatorInterface;
 use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
-use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
 use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
 
 /**
@@ -29,6 +30,7 @@ class OidcTokenExchangeAuthenticator implements AuthenticatorInterface
     private readonly OidcClientInterface $oidcClient,
     private readonly OidcUserProviderInterface $oidcUserProvider,
     private readonly string $userIdentifierProperty = 'sub',
+    private readonly LoggerInterface $logger,
   ) {
   }
 
@@ -67,6 +69,7 @@ class OidcTokenExchangeAuthenticator implements AuthenticatorInterface
         throw new AuthenticationException('Token is not active');
       }
 
+
       // Get user information from introspection data
       $userData = new OidcUserData([
         'sub' => $introspectionData->getSub(),
@@ -75,6 +78,7 @@ class OidcTokenExchangeAuthenticator implements AuthenticatorInterface
         'scope' => $introspectionData->getScope(),
       ]);
 
+    
       $userIdentifier = $introspectionData->getSub();
 
       // Ensure the user exists
@@ -84,7 +88,7 @@ class OidcTokenExchangeAuthenticator implements AuthenticatorInterface
       }
       $this->oidcUserProvider->ensureUserExists($userIdentifier, $userData, $tokens);
 
-      // Create the passport
+      // Create the passport with user data for RRN extraction
       $passport = new SelfValidatingPassport(new UserBadge(
         $userIdentifier,
         fn (string $userIdentifier) => $this->oidcUserProvider->loadOidcUser($userIdentifier),
