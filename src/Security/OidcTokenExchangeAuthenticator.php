@@ -44,28 +44,52 @@ class OidcTokenExchangeAuthenticator implements AuthenticatorInterface
   public function authenticate(Request $request): Passport
   {
     try {
-      // Try to authenticate the request
-      $authData = $this->oidcClient->authenticateTokenExchange($request);
+      // Extract bearer token from Authorization header
+      $authHeader = $request->headers->get('Authorization');
+      if (!is_string($authHeader) || !str_starts_with(trim($authHeader), 'Bearer ')) {
+        throw new AuthenticationException('No Bearer token found in Authorization header.');
+      }
+      $accessToken = trim(substr($authHeader, 7));
+      if ($accessToken === '') {
+        throw new AuthenticationException('Bearer token is empty.');
+      }
 
-      // Parse ID token if necessary
-      $idToken  = OidcJwtHelper::parseToken($authData->getIdToken());
-      $userData = new OidcUserData($idToken->claims()->all());
+      // Create OidcTokens object with the access token (similar to IntrospectTokenCommand)
+      $tokens = new \Drenso\OidcBundle\Model\OidcTokens((object) [
+        'access_token' => $accessToken,
+        'id_token' => $accessToken, // Using same token for both
+      ]);
 
-      $userIdentifier = $idToken->claims()->get($this->userIdentifierProperty);
+      // Introspect the token to validate it
+      $introspectionData = $this->oidcClient->introspect($tokens, \Drenso\OidcBundle\Enum\OidcTokenType::ACCESS);
+
+      if (!$introspectionData->isActive()) {
+        throw new AuthenticationException('Token is not active');
+      }
+
+      // Get user information from introspection data
+      $userData = new OidcUserData([
+        'sub' => $introspectionData->getSub(),
+        'iss' => $introspectionData->getIss(),
+        'aud' => $introspectionData->getAud(),
+        'scope' => $introspectionData->getScope(),
+      ]);
+
+      $userIdentifier = $introspectionData->getSub();
 
       // Ensure the user exists
       if (!$userIdentifier) {
         throw new UserNotFoundException(
           sprintf('User identifier property (%s) yielded empty user identifier', $this->userIdentifierProperty));
       }
-      $this->oidcUserProvider->ensureUserExists($userIdentifier, $userData, $authData);
+      $this->oidcUserProvider->ensureUserExists($userIdentifier, $userData, $tokens);
 
       // Create the passport
       $passport = new SelfValidatingPassport(new UserBadge(
         $userIdentifier,
         fn (string $userIdentifier) => $this->oidcUserProvider->loadOidcUser($userIdentifier),
       ));
-      $passport->setAttribute(OidcToken::AUTH_DATA_ATTR, $authData);
+      $passport->setAttribute(OidcToken::AUTH_DATA_ATTR, $tokens);
       $passport->setAttribute(OidcToken::USER_DATA_ATTR, $userData);
 
       return $passport;
