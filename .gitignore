@@ -1,5 +1,3 @@
-src_original/
-src_old/
 # PhpStorm
 .idea
 
@@ -18,5 +16,9 @@ composer.phar
 
 # PHPStan cache
 /var/cache/phpstan
+
+# VSCode
 .vscode
+
+# Sync script
 sync-to-vendor.sh
