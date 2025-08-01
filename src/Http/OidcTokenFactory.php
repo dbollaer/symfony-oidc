@@ -2,19 +2,20 @@
 
 namespace Drenso\OidcBundle\Http;
 
-use Drenso\OidcBundle\Exception\OidcException;
+use LogicException;
 use Drenso\OidcBundle\OidcClient;
 use Drenso\OidcBundle\OidcSessionStorage;
-use LogicException;
-use Symfony\Contracts\Cache\CacheInterface;
+use Drenso\OidcBundle\OidcClientInterface;
 use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Cache\CacheInterface;
+use Drenso\OidcBundle\Exception\OidcException;
 use Symfony\Component\String\Slugger\AsciiSlugger;
 
 class OidcTokenFactory implements OidcTokenFactoryInterface
 {
     public function __construct(
         private ?OidcSessionStorage $sessionStorage,
-        private OidcClient $oidcClient,
+        private OidcClientInterface $oidcClient,
         private string $scope,
         private string $audience,
         private ?CacheInterface $cache = null,

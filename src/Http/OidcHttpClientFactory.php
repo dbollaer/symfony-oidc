@@ -42,6 +42,11 @@ class OidcHttpClientFactory implements OidcHttpClientFactoryInterface
     ]);
   }
 
+  public function getAccessToken(): string
+  {
+    return $this->getExchangedTokensWithCaching()->getAccessToken();
+  }
+
   private function getExchangedTokensWithCaching()
   {
     $originalToken = $this->sessionStorage->getAccessToken();

@@ -43,6 +43,13 @@ drenso_oidc:
       token_factory_cache_time: 3600  # Optional, defaults to http_client_factory_cache_time
 ```
 
+#### Configuration Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `enable_token_factory` | boolean | `false` | Enable generation of an OidcTokenFactoryInterface that returns access tokens for this client |
+| `token_factory_cache_time` | integer | `3600` | Cache time in seconds for token factory token exchange |
+
 ### Service Names
 
 The token factory creates services with the following naming pattern:
