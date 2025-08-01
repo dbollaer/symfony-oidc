@@ -68,7 +68,6 @@ class OidcHttpClientFactory implements OidcHttpClientFactoryInterface
           
           return $tokens;
         });
-        dd($originalToken,$exchangedTokens);
         
         return $exchangedTokens;
       } catch (\Psr\Cache\InvalidArgumentException $e) {
@@ -101,7 +100,6 @@ class OidcHttpClientFactory implements OidcHttpClientFactoryInterface
       subjectTokenType: 'urn:ietf:params:oauth:token-type:access_token'
     );
 
-    dd($exchangeToken, $accessToken, $this->scope, $this->audience, $exchangeToken2);
     return $exchangeToken;
   }
 
