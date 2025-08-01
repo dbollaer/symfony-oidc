@@ -62,8 +62,16 @@ class OidcTokenExchangeAuthenticator implements AuthenticatorInterface
         'id_token' => $accessToken, // Using same token for both
       ]);
 
+      $this->logger->info('Introspecting token', [
+        'access_token' => $accessToken,
+        'id_token' => $accessToken, // Using same token for both
+      ]);
       // Introspect the token to validate it
       $introspectionData = $this->oidcClient->introspect($tokens, \Drenso\OidcBundle\Enum\OidcTokenType::ACCESS);
+
+      $this->logger->info('Introspection data', [
+        'introspection_data' => $introspectionData,
+      ]);
 
       if (!$introspectionData->isActive()) {
         throw new AuthenticationException('Token is not active');
@@ -93,6 +101,9 @@ class OidcTokenExchangeAuthenticator implements AuthenticatorInterface
 
       return $passport;
     } catch (OidcException $e) {
+      $this->logger->error('OIDC authentication failed', [
+        'exception' => $e,
+      ]);
       throw new OidcAuthenticationException('OIDC authentication failed', $e);
     }
   }
