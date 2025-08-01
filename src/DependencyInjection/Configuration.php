@@ -99,6 +99,18 @@ class Configuration implements ConfigurationInterface
                     ->thenInvalid('Must be either null or an integer value')
                   ->end()
                 ->end() // http_client_factory_cache_time
+                ->booleanNode('enable_token_factory')
+                  ->defaultFalse()
+                  ->info('Enable generation of an OidcTokenFactoryInterface that returns access tokens for this client')
+                ->end() // enable_token_factory
+                ->scalarNode('token_factory_cache_time')
+                  ->defaultValue(3600)
+                  ->info('Cache time in seconds for token factory token exchange')
+                  ->validate()
+                    ->ifTrue(fn ($value) => $value !== null && !is_int($value))
+                    ->thenInvalid('Must be either null or an integer value')
+                  ->end()
+                ->end() // token_factory_cache_time
               ->end() // array prototype children
             ->end() // array prototype
           ->end() // clients

@@ -4,6 +4,8 @@ namespace Drenso\OidcBundle\DependencyInjection;
 
 use Drenso\OidcBundle\Http\OidcHttpClientFactory;
 use Drenso\OidcBundle\Http\OidcHttpClientFactoryInterface;
+use Drenso\OidcBundle\Http\OidcTokenFactory;
+use Drenso\OidcBundle\Http\OidcTokenFactoryInterface;
 use Drenso\OidcBundle\OidcClientInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ChildDefinition;
@@ -28,6 +30,8 @@ class DrensoOidcExtension extends ConfigurableExtension
   public const HTTP_CLIENT_FACTORY_ID          = self::BASE_ID . 'http_client_factory';
   public const HTTP_CLIENT_FACTORY_LOCATOR_ID  = self::BASE_ID . 'http_client_factory_locator';
   public const HTTP_CLIENT_ID                  = self::BASE_ID . 'http_client';
+  public const TOKEN_FACTORY_ID                = self::BASE_ID . 'token_factory';
+  public const TOKEN_FACTORY_LOCATOR_ID        = self::BASE_ID . 'token_factory_locator';
 
   /** @param array<string, mixed> $mergedConfig */
   public function loadInternal(array $mergedConfig, ContainerBuilder $container): void
@@ -39,6 +43,7 @@ class DrensoOidcExtension extends ConfigurableExtension
     // Load the configured clients
     $clientServices            = [];
     $httpClientFactoryServices = [];
+    $tokenFactoryServices      = [];
     foreach ($mergedConfig['clients'] as $clientName => $clientConfig) {
       $clientServices[$clientName] = $this->registerClient($container, $clientName, $clientConfig);
 
@@ -59,6 +64,23 @@ class DrensoOidcExtension extends ConfigurableExtension
 
         $httpClientFactoryServices[$clientName] = new Reference($factoryServiceId);
       }
+
+      // Register OIDC token factory if enabled
+      if (!empty($clientConfig['enable_token_factory'])) {
+        $tokenFactoryServiceId = sprintf('drenso.oidc.token_factory.%s', $clientName);
+        $sessionStorageId = sprintf('%s.%s', self::SESSION_STORAGE_ID, $clientName);
+        $container
+          ->register($tokenFactoryServiceId, OidcTokenFactory::class)
+          ->addArgument(new Reference($sessionStorageId))
+          ->addArgument(new Reference(sprintf('drenso.oidc.client.%s', $clientName)))
+          ->addArgument($clientConfig['scope'])
+          ->addArgument($clientConfig['audience'])
+          ->addArgument(new Reference('cache.app'))
+          ->addArgument($clientConfig['token_factory_cache_time'] ?? $clientConfig['http_client_factory_cache_time'] ?? 3600);
+        $container->registerAliasForArgument($tokenFactoryServiceId, OidcTokenFactoryInterface::class, sprintf('%sOidcTokenFactory', $clientName));
+
+        $tokenFactoryServices[$clientName] = new Reference($tokenFactoryServiceId);
+      }
     }
 
     // Setup default alias
@@ -76,6 +98,14 @@ class DrensoOidcExtension extends ConfigurableExtension
       $container
         ->getDefinition(self::HTTP_CLIENT_FACTORY_LOCATOR_ID)
         ->addArgument(ServiceLocatorTagPass::register($container, $httpClientFactoryServices))
+        ->addArgument($mergedConfig['default_client']);
+    }
+
+    // Configure token factory locator
+    if (!empty($tokenFactoryServices)) {
+      $container
+        ->getDefinition(self::TOKEN_FACTORY_LOCATOR_ID)
+        ->addArgument(ServiceLocatorTagPass::register($container, $tokenFactoryServices))
         ->addArgument($mergedConfig['default_client']);
     }
   }

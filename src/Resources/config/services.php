@@ -3,6 +3,8 @@
 use Drenso\OidcBundle\DependencyInjection\DrensoOidcExtension;
 use Drenso\OidcBundle\Http\OidcHttpClientFactory;
 use Drenso\OidcBundle\Http\OidcHttpClientFactoryLocator;
+use Drenso\OidcBundle\Http\OidcTokenFactory;
+use Drenso\OidcBundle\Http\OidcTokenFactoryLocator;
 use Drenso\OidcBundle\OidcClient;
 use Drenso\OidcBundle\OidcClientLocator;
 use Drenso\OidcBundle\OidcJwtHelper;
@@ -68,6 +70,19 @@ return function (ContainerConfigurator $configurator): void {
 
     ->set(DrensoOidcExtension::HTTP_CLIENT_FACTORY_LOCATOR_ID, OidcHttpClientFactoryLocator::class)
     ->alias(OidcHttpClientFactoryLocator::class, DrensoOidcExtension::HTTP_CLIENT_FACTORY_LOCATOR_ID)
+
+    ->set(DrensoOidcExtension::TOKEN_FACTORY_ID, OidcTokenFactory::class)
+    ->args([
+      service(DrensoOidcExtension::SESSION_STORAGE_ID)->nullOnInvalid(),
+      service(DrensoOidcExtension::CLIENT_ID)->nullOnInvalid(),
+      '%drenso_oidc.clients.default.scope%',
+      '%drenso_oidc.clients.default.audience%',
+      service(CacheInterface::class)->nullOnInvalid(),
+      '%drenso_oidc.clients.default.token_factory_cache_time%',
+    ])->abstract()
+
+    ->set(DrensoOidcExtension::TOKEN_FACTORY_LOCATOR_ID, OidcTokenFactoryLocator::class)
+    ->alias(OidcTokenFactoryLocator::class, DrensoOidcExtension::TOKEN_FACTORY_LOCATOR_ID)
 
     ->set(DrensoOidcExtension::HTTP_CLIENT_ID, HttpClient::class)
     ->factory([HttpClient::class, 'create'])
