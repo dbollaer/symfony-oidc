@@ -1,6 +1,7 @@
 <?php
 
 use Drenso\OidcBundle\DependencyInjection\DrensoOidcExtension;
+use Drenso\OidcBundle\Http\OAuth2TokenExchangeFactory;
 use Drenso\OidcBundle\OidcClient;
 use Drenso\OidcBundle\OidcClientLocator;
 use Drenso\OidcBundle\OidcJwtHelper;
@@ -8,6 +9,7 @@ use Drenso\OidcBundle\OidcSessionStorage;
 use Drenso\OidcBundle\OidcUrlFetcher;
 use Drenso\OidcBundle\Security\OidcAuthenticator;
 use Psr\Clock\ClockInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Http\HttpUtils;
