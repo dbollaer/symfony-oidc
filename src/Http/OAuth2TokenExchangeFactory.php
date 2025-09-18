@@ -6,6 +6,7 @@ use Drenso\OidcBundle\Exception\OidcException;
 use Drenso\OidcBundle\Model\AccessTokens;
 use Drenso\OidcBundle\OidcClient;
 use Drenso\OidcBundle\OidcSessionStorage;
+use Psr\Cache\InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\String\Slugger\AsciiSlugger;
 use Symfony\Contracts\Cache\CacheInterface;
@@ -14,13 +15,13 @@ use Symfony\Contracts\Cache\ItemInterface;
 class OAuth2TokenExchangeFactory implements OAuth2TokenExchangeFactoryInterface
 {
   public function __construct(
-    private ?OidcSessionStorage $sessionStorage,
-    private OidcClient $oidcClient,
-    private string $scope,
-    private string $audience,
-    private LoggerInterface $logger,
-    private ?CacheInterface $cache = null,
-    private int $cacheTime = 3600,
+    private readonly ?OidcSessionStorage $sessionStorage,
+    private readonly OidcClient $oidcClient,
+    private readonly string $scope,
+    private readonly string $audience,
+    private readonly LoggerInterface $logger,
+    private readonly ?CacheInterface $cache = null,
+    private readonly int $cacheTime = 3600,
   ) {
   }
 
@@ -53,7 +54,7 @@ class OAuth2TokenExchangeFactory implements OAuth2TokenExchangeFactoryInterface
 
           return $tokens;
         });
-      } catch (\Psr\Cache\InvalidArgumentException $e) {
+      } catch (InvalidArgumentException $e) {
         $this->logger->error($e->getMessage(), ['exception' => $e]);
         // If cache fails, fall back to direct token exchange
       }

@@ -116,7 +116,7 @@ class OidcClient implements OidcClientInterface
     );
   }
 
-  public function exchangeTokens(string $accessToken, ?string $targetScope = null, ?string $targetAudience = null,?string $subjectTokenType = null): AccessTokens
+  public function exchangeTokens(string $accessToken, ?string $targetScope = null, ?string $targetAudience = null, ?string $subjectTokenType = null): AccessTokens
   {
     // Clear session after check
     $this->sessionStorage->clearState();
@@ -129,7 +129,6 @@ class OidcClient implements OidcClientInterface
         scope: $targetScope,
         audience: $targetAudience,
         subjectTokenType: $subjectTokenType ?? 'urn:ietf:params:oauth:token-type:access_token',
-
       )
     );
     $this->jwtHelper->verifyAccessToken($this->getIssuer(), $this->getJwksUri(), $tokens, false);
@@ -498,8 +497,7 @@ class OidcClient implements OidcClientInterface
     ?string $scope = null,
     ?string $audience = null,
     ?string $subjectTokenType = null,
-  ): UnvalidatedOidcTokens
-  {
+  ): UnvalidatedOidcTokens {
     $params = [
       'grant_type'    => $grantType,
       'client_id'     => $this->clientId,

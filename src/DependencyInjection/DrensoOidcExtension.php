@@ -122,7 +122,7 @@ class DrensoOidcExtension extends ConfigurableExtension
    * @param array<string, mixed> $config
    * @param array<string, mixed> $mergedConfig
    */
-  private function registerTokenExchangeFactory(ContainerBuilder $container, string $clientName, string $factoryName, array $config, array $mergedConfig,Reference $client): Reference
+  private function registerTokenExchangeFactory(ContainerBuilder $container, string $clientName, string $factoryName, array $config, array $mergedConfig, Reference $client): Reference
   {
     $factoryId        = sprintf('%s.%s.%s', self::TOKEN_EXCHANGE_FACTORY_ID, $clientName, $factoryName);
     $sessionStorageId = sprintf('%s.%s', self::SESSION_STORAGE_ID, $clientName);
