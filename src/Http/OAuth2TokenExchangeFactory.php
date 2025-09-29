@@ -33,13 +33,21 @@ class OAuth2TokenExchangeFactory implements OAuth2TokenExchangeFactoryInterface
 
   private function getExchangedTokensWithCaching(): AccessTokens
   {
+    if ($this->sessionStorage === null) {
+      throw new OidcException('Session storage is not available');
+    }
+    
     $originalToken = $this->sessionStorage->getAccessToken();
 
     // Exchange the original access token for one with the target scope/audience
     // Create a cache key based on the original token, scope, and audience
+    if ($originalToken === null) {
+      throw new OidcException('No access token available in session');
+    }
+    
     $cacheKey = $this->generateCacheKey($originalToken, $this->scope, $this->audience);
 
-    if ($this->isCacheEnabled()) {
+    if ($this->isCacheEnabled() && $this->cache !== null) {
       try {
         return $this->cache->get($cacheKey, function (ItemInterface $item) use ($originalToken) {
           // Exchange the original token for one with target scope/audience
@@ -90,6 +98,6 @@ class OAuth2TokenExchangeFactory implements OAuth2TokenExchangeFactoryInterface
 
   private function isCacheEnabled(): bool
   {
-    return $this->cache !== null && $this->cacheTime !== null;
+    return $this->cache !== null && $this->cacheTime > 0;
   }
 }
