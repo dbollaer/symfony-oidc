@@ -42,9 +42,12 @@ class DrensoOidcExtension extends ConfigurableExtension
         $container
           ->setDefinition($exchangeClientId, new ChildDefinition(self::TOKEN_EXCHANGE_CLIENT_ID))
           ->addArgument($clientServices[$clientName])
+          ->addArgument(new Reference(self::SESSION_STORAGE_ID))
           ->addArgument($exchangeClientConfig['scope'])
           ->addArgument($exchangeClientConfig['audience'])
-          ->addArgument($exchangeClientConfig['cache_time']);
+          ->addArgument(new Reference('cache.app'))
+          ->addArgument($exchangeClientConfig['cache_time'])
+          ;
 
         // Use client prefix only for non-default clients
         $defaultClientName = $mergedConfig['default_client'] ?? 'default';
