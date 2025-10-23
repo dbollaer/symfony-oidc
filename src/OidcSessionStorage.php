@@ -101,11 +101,6 @@ class OidcSessionStorage
     return 'drenso.oidc.session.access_token.' . $this->clientName;
   }
 
-  private function exchangedAccessTokenKey(): string
-  {
-    return 'drenso.oidc.session.exchanged_access_token.' . $this->clientName;
-  }
-
   public function getAccessToken(): ?string
   {
     return $this->getSession()->get($this->accessTokenKey());
@@ -116,13 +111,4 @@ class OidcSessionStorage
     $this->getSession()->set($this->accessTokenKey(), $value);
   }
 
-  public function getExchangedAccessToken(): ?string
-  {
-    return $this->getSession()->get($this->exchangedAccessTokenKey());
-  }
-
-  public function storeExchangedAccessToken(string $value): void
-  {
-    $this->getSession()->set($this->exchangedAccessTokenKey(), $value);
-  }
 }

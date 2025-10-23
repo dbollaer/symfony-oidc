@@ -9,7 +9,6 @@ use Drenso\OidcBundle\OidcSessionStorage;
 use Drenso\OidcBundle\OidcUrlFetcher;
 use Drenso\OidcBundle\Security\OidcAuthenticator;
 use Psr\Clock\ClockInterface;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Http\HttpUtils;
@@ -48,7 +47,7 @@ return function (ContainerConfigurator $configurator): void {
 
     ->set(DrensoOidcExtension::TOKEN_EXCHANGE_CLIENT_ID, TokenExchangeClient::class)
     ->args([
-      service(LoggerInterface::class),
+      service(OidcSessionStorage::class),
       service(CacheInterface::class)->nullOnInvalid(),
     ])
     ->abstract()

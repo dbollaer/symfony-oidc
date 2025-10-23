@@ -4,5 +4,5 @@ namespace Drenso\OidcBundle\Http;
 
 interface TokenExchangeClientInterface
 {
-  public function getExchangedAccessToken(string $originalAccessToken): string;
+  public function getExchangedAccessToken(): string;
 }

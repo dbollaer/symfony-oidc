@@ -2,44 +2,46 @@
 
 namespace Drenso\OidcBundle\Http;
 
-use Drenso\OidcBundle\Exception\OidcConfigurationResolveException;
-use Drenso\OidcBundle\Exception\OidcException;
-use Drenso\OidcBundle\Model\AccessTokens;
 use Drenso\OidcBundle\OidcClient;
 use Psr\Cache\InvalidArgumentException;
-use Psr\Log\LoggerInterface;
-use Symfony\Component\String\Slugger\AsciiSlugger;
-use Symfony\Contracts\Cache\CacheInterface;
+use Drenso\OidcBundle\Model\AccessTokens;
+use Drenso\OidcBundle\OidcSessionStorage;
 use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Cache\CacheInterface;
+use Drenso\OidcBundle\Exception\OidcException;
+use Symfony\Component\String\Slugger\AsciiSlugger;
+use Drenso\OidcBundle\Exception\OidcConfigurationResolveException;
 
 class TokenExchangeClient implements TokenExchangeClientInterface
 {
   public function __construct(
     private readonly OidcClient $oidcClient,
+    private readonly OidcSessionStorage $sessionStorage,
     private readonly string $scope,
     private readonly string $audience,
-    private readonly LoggerInterface $logger,
     private readonly ?CacheInterface $cache = null,
     private readonly int $cacheTime = 3600,
   ) {
   }
 
   /** @throws OidcException */
-  public function getExchangedAccessToken(string $originalAccessToken): string
+  public function getExchangedAccessToken(): string
   {
-    return $this->getExchangedTokensWithCaching($originalAccessToken)->getAccessToken();
+    return $this->getExchangedTokensWithCaching()->getAccessToken();
   }
 
   /**
    * @throws OidcConfigurationResolveException
    * @throws OidcException
    */
-  private function getExchangedTokensWithCaching(string $originalToken): AccessTokens
+  private function getExchangedTokensWithCaching(): AccessTokens
   {
+    $originalToken = $this->sessionStorage->getAccessToken();
+
     if ($this->isCacheEnabled() && $this->cache !== null) {
       try {
         // Create a cache key based on the original token, scope, and audience
-        $cacheKey = $this->generateCacheKey($originalToken, $this->scope, $this->audience);
+        $cacheKey = $this->generateCacheKey($this->sessionStorage->getAccessToken(), $this->scope, $this->audience);
 
         return $this->cache->get($cacheKey, function (ItemInterface $item) use ($originalToken) {
           // Exchange the original token for one with target scope/audience
@@ -55,7 +57,6 @@ class TokenExchangeClient implements TokenExchangeClientInterface
           return $tokens;
         });
       } catch (InvalidArgumentException $e) {
-        $this->logger->error($e->getMessage(), ['exception' => $e]);
         throw new OidcConfigurationResolveException('Cache failed: ' . $e->getMessage(), previous: $e);
       }
     }
