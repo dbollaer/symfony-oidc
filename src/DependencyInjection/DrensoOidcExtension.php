@@ -38,11 +38,12 @@ class DrensoOidcExtension extends ConfigurableExtension
       $clientServices[$clientName] = $this->registerClient($container, $clientName, $clientConfig);
       // Register token exchange clients for this client
       foreach ($clientConfig['token_exchange_clients'] as $exchangeClientName => $exchangeClientConfig) {
+        $sessionStorageId = sprintf('%s.%s', self::SESSION_STORAGE_ID, $clientName);
         $exchangeClientId  = sprintf('%s.%s.%s', self::TOKEN_EXCHANGE_CLIENT_ID, $clientName, $exchangeClientName);
         $container
           ->setDefinition($exchangeClientId, new ChildDefinition(self::TOKEN_EXCHANGE_CLIENT_ID))
           ->addArgument($clientServices[$clientName])
-          ->addArgument(new Reference(self::SESSION_STORAGE_ID))
+          ->addArgument(new Reference($sessionStorageId))
           ->addArgument($exchangeClientConfig['scope'])
           ->addArgument($exchangeClientConfig['audience'])
           ->addArgument(new Reference('cache.app'))

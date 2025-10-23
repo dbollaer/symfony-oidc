@@ -47,7 +47,6 @@ return function (ContainerConfigurator $configurator): void {
 
     ->set(DrensoOidcExtension::TOKEN_EXCHANGE_CLIENT_ID, TokenExchangeClient::class)
     ->args([
-      service(OidcSessionStorage::class)->nullOnInvalid(),
       service(CacheInterface::class)->nullOnInvalid(),
     ])
     ->abstract()
