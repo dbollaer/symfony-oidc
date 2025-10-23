@@ -16,7 +16,7 @@ class TokenExchangeClient implements TokenExchangeClientInterface
 {
   public function __construct(
     private readonly OidcClient $oidcClient,
-    private readonly OidcSessionStorage $sessionStorage,
+    private readonly ?OidcSessionStorage $sessionStorage,
     private readonly string $scope,
     private readonly string $audience,
     private readonly ?CacheInterface $cache = null,
@@ -36,6 +36,9 @@ class TokenExchangeClient implements TokenExchangeClientInterface
    */
   private function getExchangedTokensWithCaching(): AccessTokens
   {
+    if ($this->sessionStorage === null) {
+      throw new OidcException('Session storage is not available');
+    }
     $originalToken = $this->sessionStorage->getAccessToken();
 
     if ($this->isCacheEnabled() && $this->cache !== null) {
