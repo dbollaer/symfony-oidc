@@ -319,9 +319,9 @@ Some providers return incorrect or incomplete well known information. You can co
 
 This bundle support Token Exchange: you can use the `exchangeTokens` on the `OidcClient` to do so. This was added with https://github.com/Drenso/symfony-oidc/pull/66, which contains some more background information regarding the procedure as well.
 
-#### OAuth2TokenExchangeFactory
+#### TokenExchangeClient
 
-The bundle provides an `OAuth2TokenExchangeFactory` service that simplifies token exchange operations. This factory automatically handles caching of exchanged tokens and provides a clean interface for obtaining access tokens with different scopes and audiences.
+The bundle provides an `TokenExchangeClient` service that simplifies token exchange operations. This factory automatically handles caching of exchanged tokens and provides a clean interface for obtaining access tokens with different scopes and audiences.
 
 **Configuration:**
 
@@ -333,19 +333,19 @@ drenso_oidc:
     clients:
         main:
             # ... other client configuration ...
-            token_exchange_factories:
-                api_access:  # This becomes $apiAccessTokenExchangeFactory
+            token_exchange_clients:
+                api_access:  # This becomes $apiAccessTokenExchangeClient
                     scope: 'api:read api:write'
                     audience: 'https://api.example.com'
                     cache_time: 3600  # Optional, defaults to 3600 seconds
-                admin_access:  # This becomes $adminAccessTokenExchangeFactory
+                admin_access:  # This becomes $adminAccessTokenExchangeClient
                     scope: 'admin:full'
                     audience: 'https://admin.example.com'
                     cache_time: 1800
         secondary:
             # ... other client configuration ...
-            token_exchange_factories:
-                external_api:  # This becomes $externalApiTokenExchangeFactory
+            token_exchange_clients:
+                external_api:  # This becomes $externalApiTokenExchangeClient
                     scope: 'external:read'
                     audience: 'https://external.example.com'
 ```
@@ -355,23 +355,34 @@ drenso_oidc:
 The factory services are automatically registered and can be autowired:
 
 ```php
-use Drenso\OidcBundle\Http\OAuth2TokenExchangeFactoryInterface;
+use Drenso\OidcBundle\Http\TokenExchangeClientInterface;
+use Drenso\OidcBundle\Security\Token\OidcToken;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 class ApiController
 {
     public function __construct(
         // Default factory (first factory from default client)
-        private OAuth2TokenExchangeFactoryInterface $tokenExchangeFactory,
+        private TokenExchangeClientInterface $tokenExchangeFactory,
         
         // Named factories (using the factory name from config)
-        private OAuth2TokenExchangeFactoryInterface $apiAccessTokenExchangeFactory,
-        private OAuth2TokenExchangeFactoryInterface $adminAccessTokenExchangeFactory,
+        private TokenExchangeClientInterface $apiAccessTokenExchangeClient,
+        private TokenExchangeClientInterface $adminAccessTokenExchangeClient,
+        private TokenStorageInterface $tokenStorage,
     ) {}
 
     public function getApiData(): Response
     {
+        // Get the original access token from the security token
+        $token = $this->tokenStorage->getToken();
+        if (!$token instanceof OidcToken) {
+            throw new \RuntimeException('User must be authenticated with OIDC');
+        }
+        
+        $originalAccessToken = $token->getAccessToken();
+        
         // Get access token with API scope and audience
-        $accessToken = $this->apiAccessTokenTokenExchangeFactory->getAccessToken();
+        $exchangedAccessToken = $this->apiAccessTokenTokenExchangeClient->getExchangedAccessToken($originalAccessToken);
         
         // Use the token to make API calls
         // ...
@@ -381,13 +392,13 @@ class ApiController
 
 **Autowiring:**
 
-- **Default factory**: `OAuth2TokenExchangeFactoryInterface $tokenExchangeFactory` - gets the first factory from the default client
-- **Default client factories**: `OAuth2TokenExchangeFactoryInterface ${factoryName}TokenExchangeFactory` - simple names
-- **Other client factories**: `OAuth2TokenExchangeFactoryInterface ${clientName}${factoryName}TokenExchangeFactory` - client-prefixed names
+- **Default factory**: `TokenExchangeClientInterface $tokenExchangeFactory` - gets the first factory from the default client
+- **Default client factories**: `TokenExchangeClientInterface ${factoryName}TokenExchangeClient` - simple names
+- **Other client factories**: `TokenExchangeClientInterface ${clientName}${factoryName}TokenExchangeClient` - client-prefixed names
 
 **Examples:**
-- `$apiAccessTokenExchangeFactory` (default client)
-- `$secondaryApiAccessTokenExchangeFactory` (secondary client)
+- `$apiAccessTokenExchangeClient` (default client)
+- `$secondaryApiAccessTokenExchangeClient` (secondary client)
 
 **Usage Example:**
 
@@ -396,14 +407,14 @@ class MyController
 {
     public function __construct(
         // Default factory (first from default client)
-        private OAuth2TokenExchangeFactoryInterface $tokenExchangeFactory,
+        private TokenExchangeClientInterface $tokenExchangeFactory,
         
         // Default client factories (simple names)
-        private OAuth2TokenExchangeFactoryInterface $apiAccessTokenExchangeFactory,
-        private OAuth2TokenExchangeFactoryInterface $adminAccessTokenExchangeFactory,
+        private TokenExchangeClientInterface $apiAccessTokenExchangeClient,
+        private TokenExchangeClientInterface $adminAccessTokenExchangeClient,
         
         // Other client factories (client-prefixed names)
-        private OAuth2TokenExchangeFactoryInterface $secondaryExternalApiTokenExchangeFactory,
+        private TokenExchangeClientInterface $secondaryExternalApiTokenExchangeClient,
     ) {}
 }
 ```

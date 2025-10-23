@@ -2,20 +2,19 @@
 
 namespace Drenso\OidcBundle\Http;
 
+use Drenso\OidcBundle\Exception\OidcConfigurationResolveException;
 use Drenso\OidcBundle\Exception\OidcException;
 use Drenso\OidcBundle\Model\AccessTokens;
 use Drenso\OidcBundle\OidcClient;
-use Drenso\OidcBundle\OidcSessionStorage;
 use Psr\Cache\InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\String\Slugger\AsciiSlugger;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 
-class OAuth2TokenExchangeFactory implements OAuth2TokenExchangeFactoryInterface
+class TokenExchangeClient implements TokenExchangeClientInterface
 {
   public function __construct(
-    private readonly ?OidcSessionStorage $sessionStorage,
     private readonly OidcClient $oidcClient,
     private readonly string $scope,
     private readonly string $audience,
@@ -26,29 +25,22 @@ class OAuth2TokenExchangeFactory implements OAuth2TokenExchangeFactoryInterface
   }
 
   /** @throws OidcException */
-  public function getAccessToken(): string
+  public function getExchangedAccessToken(string $originalAccessToken): string
   {
-    return $this->getExchangedTokensWithCaching()->getAccessToken();
+    return $this->getExchangedTokensWithCaching($originalAccessToken)->getAccessToken();
   }
 
-  private function getExchangedTokensWithCaching(): AccessTokens
+  /**
+   * @throws OidcConfigurationResolveException
+   * @throws OidcException
+   */
+  private function getExchangedTokensWithCaching(string $originalToken): AccessTokens
   {
-    if ($this->sessionStorage === null) {
-      throw new OidcException('Session storage is not available');
-    }
-    
-    $originalToken = $this->sessionStorage->getAccessToken();
-
-    // Exchange the original access token for one with the target scope/audience
-    // Create a cache key based on the original token, scope, and audience
-    if ($originalToken === null) {
-      throw new OidcException('No access token available in session');
-    }
-    
-    $cacheKey = $this->generateCacheKey($originalToken, $this->scope, $this->audience);
-
     if ($this->isCacheEnabled() && $this->cache !== null) {
       try {
+        // Create a cache key based on the original token, scope, and audience
+        $cacheKey = $this->generateCacheKey($originalToken, $this->scope, $this->audience);
+
         return $this->cache->get($cacheKey, function (ItemInterface $item) use ($originalToken) {
           // Exchange the original token for one with target scope/audience
           $tokens = $this->exchangeTokens($originalToken);
@@ -64,7 +56,7 @@ class OAuth2TokenExchangeFactory implements OAuth2TokenExchangeFactoryInterface
         });
       } catch (InvalidArgumentException $e) {
         $this->logger->error($e->getMessage(), ['exception' => $e]);
-        // If cache fails, fall back to direct token exchange
+        throw new OidcConfigurationResolveException('Cache failed: ' . $e->getMessage(), previous: $e);
       }
     }
 
@@ -88,7 +80,7 @@ class OAuth2TokenExchangeFactory implements OAuth2TokenExchangeFactoryInterface
     $tokenHash = hash('sha256', $accessToken);
 
     return sprintf(
-      '_drenso_oidc_http_client_factory__token_exchange__%s__%s__%s__%s',
+      '_drenso_oidc_http_client__token_exchange__%s__%s__%s__%s',
       $slugger->slug($scope),
       $slugger->slug($audience),
       $tokenHash,
