@@ -41,10 +41,14 @@ class TokenExchangeClient implements TokenExchangeClientInterface
     }
     $originalToken = $this->sessionStorage->getAccessToken();
 
+    if ($originalToken === null) {
+      throw new OidcException('No access token available in session');
+    }
+
     if ($this->isCacheEnabled() && $this->cache !== null) {
       try {
         // Create a cache key based on the original token, scope, and audience
-        $cacheKey = $this->generateCacheKey($this->sessionStorage->getAccessToken(), $this->scope, $this->audience);
+        $cacheKey = $this->generateCacheKey($originalToken, $this->scope, $this->audience);
 
         return $this->cache->get($cacheKey, function (ItemInterface $item) use ($originalToken) {
           // Exchange the original token for one with target scope/audience
