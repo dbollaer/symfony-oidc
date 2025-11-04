@@ -91,4 +91,22 @@ interface OidcClientInterface
    * @throws OidcException
    */
   public function introspect(OidcTokens $tokens, ?OidcTokenType $tokenType = null): OidcIntrospectionData;
+
+  /**
+   * Get the issuer from the well-known configuration.
+   *
+   * @return non-empty-string
+   *
+   * @throws OidcConfigurationException
+   * @throws OidcConfigurationResolveException
+   */
+  public function getIssuer(): string;
+
+  /**
+   * Get the JWKS URI from the well-known configuration.
+   *
+   * @throws OidcConfigurationException
+   * @throws OidcConfigurationResolveException
+   */
+  public function getJwksUri(): string;
 }

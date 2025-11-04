@@ -307,7 +307,7 @@ class OidcClient implements OidcClientInterface
    *
    * @return non-empty-string
    */
-  protected function getIssuer(): string
+  public function getIssuer(): string
   {
     return $this->getConfigurationValue('issuer');
   }
@@ -316,7 +316,7 @@ class OidcClient implements OidcClientInterface
    * @throws OidcConfigurationException
    * @throws OidcConfigurationResolveException
    */
-  protected function getJwksUri(): string
+  public function getJwksUri(): string
   {
     return $this->getConfigurationValue('jwks_uri');
   }
