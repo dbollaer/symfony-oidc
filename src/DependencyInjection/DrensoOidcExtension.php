@@ -82,7 +82,7 @@ class DrensoOidcExtension extends ConfigurableExtension
       ->addArgument($config['well_known_url'])
       ->addArgument($config['well_known_cache_time'])
       ->addArgument($config['client_id'])
-      ->addArgument($config['client_secret'])
+      ->addArgument($config['client_secret']??'')
       ->addArgument($config['redirect_route'])
       ->addArgument($config['remember_me_parameter'])
       ->addArgument($wellKnownParserId ? new Reference($wellKnownParserId) : null)
