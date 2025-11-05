@@ -44,12 +44,10 @@ class OidcTokenExchangeFactory extends AbstractFactory implements AuthenticatorF
   {
     $authenticatorId = sprintf('%s.%s', DrensoOidcExtension::TOKEN_EXCHANGE_AUTHENTICATOR_ID, $firewallName);
     $clientReference = new Reference(sprintf('%s.%s', DrensoOidcExtension::CLIENT_ID, $config['client']));
-    $jwtHelperReference = new Reference(sprintf('%s.%s', DrensoOidcExtension::JWT_HELPER_ID, $config['client']));
 
     $container
       ->setDefinition($authenticatorId, new ChildDefinition(DrensoOidcExtension::TOKEN_EXCHANGE_AUTHENTICATOR_ID))
       ->addArgument($clientReference)
-      ->addArgument($jwtHelperReference)
       ->addArgument(new Reference($userProviderId))
       ->addArgument($config['user_identifier_property'])
       ->addArgument($config['resource_provider_mode']);
