@@ -30,15 +30,15 @@ class OidcTokenExchangeAuthenticator implements AuthenticatorInterface
 {
   /**
    * @param OidcUserProviderInterface<\Symfony\Component\Security\Core\User\UserInterface> $oidcUserProvider
-   * @param bool $resourceProviderMode If true, uses JWT validation (resource provider mode).
-   *                                   If false, uses introspection (token exchange mode).
+   * @param bool                                                                           $resourceProviderMode If true, uses JWT validation (resource provider mode).
+   *                                                                                                             If false, uses introspection (token exchange mode).
    */
   public function __construct(
     private readonly OidcClientInterface $oidcClient,
     private readonly OidcJwtHelper $jwtHelper,
     private readonly OidcUserProviderInterface $oidcUserProvider,
     private readonly string $userIdentifierProperty = 'sub',
-    private readonly bool $resourceProviderMode = true,
+    private readonly bool $resourceProviderMode = false,
   ) {
   }
 
@@ -50,7 +50,7 @@ class OidcTokenExchangeAuthenticator implements AuthenticatorInterface
     return is_string($authHeader) && str_starts_with(trim($authHeader), 'Bearer ');
   }
 
-  /** @throws Exception\InvalidJwtTokenException */
+  /** @throws InvalidJwtTokenException */
   public function authenticate(Request $request): Passport
   {
     try {
@@ -72,39 +72,32 @@ class OidcTokenExchangeAuthenticator implements AuthenticatorInterface
         'id_token'     => $accessToken,
       ]);
 
-      $userData = null;
+      $userData       = null;
       $userIdentifier = null;
 
       if ($this->resourceProviderMode) {
         // Resource Provider Mode: Try JWT validation first (local, no network call)
         // OidcJwtHelper::verifyAccessToken() gracefully handles opaque tokens internally
-        try {
-          // First, try to parse as JWT to check if it's a JWT token
-          $parsedToken = OidcJwtHelper::parseToken($accessToken);
+        // First, try to parse as JWT to check if it's a JWT token
+        $parsedToken = OidcJwtHelper::parseToken($accessToken);
+        // Validate JWT signature, issuer, and expiration
+        // This will throw OidcAuthenticationException if JWT validation fails
+        // but gracefully handles opaque tokens (catches InvalidJwtTokenException internally)
+        $issuer  = $this->oidcClient->getIssuer();
+        $jwksUri = $this->oidcClient->getJwksUri();
+        $this->jwtHelper->verifyAccessToken($issuer, $jwksUri, $tokens, false);
+        // If we get here, JWT validation succeeded - extract user data from claims
+        $claims   = $parsedToken->claims()->all();
+        $userData = new OidcUserData($claims);
 
-          // Validate JWT signature, issuer, and expiration
-          // This will throw OidcAuthenticationException if JWT validation fails
-          // but gracefully handles opaque tokens (catches InvalidJwtTokenException internally)
-          $issuer = $this->oidcClient->getIssuer();
-          $jwksUri = $this->oidcClient->getJwksUri();
-          $this->jwtHelper->verifyAccessToken($issuer, $jwksUri, $tokens, false);
-
-          // If we get here, JWT validation succeeded - extract user data from claims
-          $claims = $parsedToken->claims()->all();
-          $userData = new OidcUserData($claims);
-
-          // Extract user identifier from JWT claims
-          $userIdentifier = $parsedToken->claims()->get($this->userIdentifierProperty);
-          if (!is_string($userIdentifier) || $userIdentifier === '') {
-            // Try to get from claims array directly
-            $userIdentifier = $claims[$this->userIdentifierProperty] ?? null;
-            if ($userIdentifier !== null) {
-              $userIdentifier = (string)$userIdentifier;
-            }
+        // Extract user identifier from JWT claims
+        $userIdentifier = $parsedToken->claims()->get($this->userIdentifierProperty);
+        if (!is_string($userIdentifier) || $userIdentifier === '') {
+          // Try to get from claims array directly
+          $userIdentifier = $claims[$this->userIdentifierProperty] ?? null;
+          if ($userIdentifier !== null) {
+            $userIdentifier = (string)$userIdentifier;
           }
-        } catch (InvalidJwtTokenException) {
-          // Token is not a JWT (opaque token) - fall back to introspection
-          // This is expected for opaque tokens and handled gracefully
         }
         // Note: OidcAuthenticationException from verifyAccessToken() means JWT validation failed
         // (invalid signature, expired, etc.) - we let it bubble up as it indicates an invalid token
@@ -118,7 +111,7 @@ class OidcTokenExchangeAuthenticator implements AuthenticatorInterface
           }
 
           // Get user information from introspection data
-          $userData = new OidcUserData($introspectionData->getIntrospectionDataArray());
+          $userData       = new OidcUserData($introspectionData->getIntrospectionDataArray());
           $userIdentifier = $introspectionData->getSub();
         }
       } else {
@@ -130,7 +123,7 @@ class OidcTokenExchangeAuthenticator implements AuthenticatorInterface
         }
 
         // Get user information from introspection data
-        $userData = new OidcUserData($introspectionData->getIntrospectionDataArray());
+        $userData       = new OidcUserData($introspectionData->getIntrospectionDataArray());
         $userIdentifier = $introspectionData->getSub();
       }
 
