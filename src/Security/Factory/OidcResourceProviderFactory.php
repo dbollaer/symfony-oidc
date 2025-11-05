@@ -10,7 +10,7 @@ use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
-class OidcTokenExchangeFactory extends AbstractFactory implements AuthenticatorFactoryInterface
+class OidcResourceProviderFactory extends AbstractFactory implements AuthenticatorFactoryInterface
 {
   public const PRIORITY = -5;
 
@@ -32,7 +32,7 @@ class OidcTokenExchangeFactory extends AbstractFactory implements AuthenticatorF
 
   public function getKey(): string
   {
-    return 'oidc_token_exchange';
+    return 'oidc_resource_provider';
   }
 
   public function createAuthenticator(
@@ -41,11 +41,11 @@ class OidcTokenExchangeFactory extends AbstractFactory implements AuthenticatorF
     array $config,
     string $userProviderId): string
   {
-    $authenticatorId = sprintf('%s.%s', DrensoOidcExtension::TOKEN_EXCHANGE_AUTHENTICATOR_ID, $firewallName);
+    $authenticatorId = sprintf('%s.%s', DrensoOidcExtension::RESOURCE_PROVIDER_AUTHENTICATOR_ID, $firewallName);
     $clientReference = new Reference(sprintf('%s.%s', DrensoOidcExtension::CLIENT_ID, $config['client']));
 
     $container
-      ->setDefinition($authenticatorId, new ChildDefinition(DrensoOidcExtension::TOKEN_EXCHANGE_AUTHENTICATOR_ID))
+      ->setDefinition($authenticatorId, new ChildDefinition(DrensoOidcExtension::RESOURCE_PROVIDER_AUTHENTICATOR_ID))
       ->addArgument($clientReference)
       ->addArgument(new Reference($userProviderId))
       ->addArgument($config['user_identifier_property']);
@@ -78,3 +78,4 @@ class OidcTokenExchangeFactory extends AbstractFactory implements AuthenticatorF
     throw new UnsupportedManagerException();
   }
 }
+

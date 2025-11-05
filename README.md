@@ -276,23 +276,14 @@ security:
 |----------------------------|------------|----------------------------------------------------------------------------|
 | `client`                   | `default`  | The configured OIDC client to use for token validation                    |
 | `user_identifier_property` | `sub`      | The property from token data to use as user identifier                    |
-| `resource_provider_mode`   | `false`    | If `true`, uses JWT validation (resource provider mode). If `false`, uses token introspection (token exchange mode). See [Resource Provider Mode](#resource-provider-mode) for details. |
 
 **Usage:**
-This authenticator automatically handles requests with `Authorization: Bearer <token>` headers. The behavior depends on the `resource_provider_mode` setting:
+This authenticator automatically handles requests with `Authorization: Bearer <token>` headers using token introspection:
 
-**Token Exchange Mode** (`resource_provider_mode: false`, default):
 1. Extract the Bearer token from the Authorization header
 2. Introspect the token using the configured OIDC client (remote API call)
 3. Validate that the token is active
 4. Create or load the user based on the introspection data
-5. Return a 401 JSON response if authentication fails
-
-**Resource Provider Mode** (`resource_provider_mode: true`):
-1. Extract the Bearer token from the Authorization header
-2. Validate the JWT token locally (signature, issuer, expiration, audience)
-3. Extract user data from JWT claims
-4. Create or load the user based on the JWT claims
 5. Return a 401 JSON response if authentication fails
 
 **Example API Request:**
@@ -310,47 +301,69 @@ curl -H "Authorization: Bearer your_access_token_here" https://your-app.com/api/
 }
 ```
 
-#### Resource Provider Mode
+### Resource Provider Authenticator
 
-Resource Provider Mode enables JWT-based token validation instead of token introspection. This mode is useful when:
+The `OidcResourceProviderAuthenticator` is designed for API authentication using JWT access tokens. Unlike the `OidcTokenExchangeAuthenticator` which uses token introspection, this authenticator validates JWT tokens locally using the provider's JWKS (JSON Web Key Set). This mode is useful when:
 
 - You're acting as a resource server validating tokens issued by your OIDC provider
 - You want to avoid the network overhead of token introspection calls
 - Your OIDC provider issues JWT access tokens that can be validated locally
 
-**Enabling Resource Provider Mode:**
+**Configuration Example:**
 
 ```yaml
 security:
   firewalls:
     api:
       pattern: ^/api/
-      oidc_token_exchange:
+      oidc_resource_provider:
         client: default
         user_identifier_property: sub
-        resource_provider_mode: true
       stateless: true
 ```
 
+**Available Options:**
+
+| Option                     | Default    | Description                                                                |
+|----------------------------|------------|----------------------------------------------------------------------------|
+| `client`                   | `default`  | The configured OIDC client to use for token validation                    |
+| `user_identifier_property` | `sub`      | The property from JWT claims to use as user identifier                    |
+
 **How it works:**
 
-When `resource_provider_mode: true`:
-- The authenticator validates JWT tokens locally using the provider's JWKS (JSON Web Key Set)
-- No network calls are made to the introspection endpoint
-- User data is extracted directly from JWT claims
-- Token signature, issuer, expiration, and audience are validated locally
+1. Extract the Bearer token from the Authorization header
+2. Validate the JWT token locally (signature, issuer, expiration, audience) using the provider's JWKS
+3. Extract user data from JWT claims
+4. Create or load the user based on the JWT claims
+5. Return a 401 JSON response if authentication fails
 
-When `resource_provider_mode: false` (default):
-- The authenticator calls the introspection endpoint to validate tokens
-- Requires network access to the OIDC provider
-- User data is extracted from introspection response
-- Works with both JWT and opaque tokens
+**Key differences from Token Exchange Authenticator:**
 
-**Requirements for Resource Provider Mode:**
+- **No network calls**: JWT validation happens locally, no introspection endpoint calls
+- **Faster**: Avoids the latency of remote API calls
+- **Requires JWT tokens**: Only works with JWT access tokens (not opaque tokens)
+- **Local validation**: Token signature, issuer, expiration, and audience are validated using cached JWKS
+
+**Requirements:**
 
 - Your OIDC provider must issue JWT access tokens (not opaque tokens)
 - The OIDC client must be configured with the correct `well_known_url` to fetch JWKS
 - The token must include the required claims (e.g., `sub` for user identification)
+
+**Example API Request:**
+```bash
+curl -H "Authorization: Bearer your_jwt_access_token_here" https://your-app.com/api/protected-endpoint
+```
+
+**Response on Success:**
+- Request continues normally with authenticated user
+
+**Response on Failure:**
+```json
+{
+  "message": "OIDC authentication failed"
+}
+```
 
 ### Leeway
 
