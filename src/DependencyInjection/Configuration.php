@@ -57,7 +57,6 @@ class Configuration implements ConfigurationInterface
                   ->isRequired()
                 ->end() // client_id
                 ->scalarNode('client_secret')
-                  ->isRequired()
                 ->end() // client_secret
                 ->scalarNode('redirect_route')
                   ->defaultValue('/login_check')
