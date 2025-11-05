@@ -99,21 +99,6 @@ class OidcTokenExchangeAuthenticator implements AuthenticatorInterface
             $userIdentifier = (string)$userIdentifier;
           }
         }
-        // Note: OidcAuthenticationException from verifyAccessToken() means JWT validation failed
-        // (invalid signature, expired, etc.) - we let it bubble up as it indicates an invalid token
-
-        // Fallback to introspection if JWT validation failed or user data not extracted
-        if ($userData === null || $userIdentifier === null || $userIdentifier === '') {
-          $introspectionData = $this->oidcClient->introspect($tokens, OidcTokenType::ACCESS);
-
-          if (!$introspectionData->isActive()) {
-            throw new AuthenticationException('Token is not active');
-          }
-
-          // Get user information from introspection data
-          $userData       = new OidcUserData($introspectionData->getIntrospectionDataArray());
-          $userIdentifier = $introspectionData->getSub();
-        }
       } else {
         // Token Exchange Mode: Use introspection only (original behavior)
         $introspectionData = $this->oidcClient->introspect($tokens, OidcTokenType::ACCESS);
