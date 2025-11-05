@@ -4,11 +4,7 @@ namespace Drenso\OidcBundle\Security;
 
 use Drenso\OidcBundle\Enum\OidcTokenType;
 use Drenso\OidcBundle\Exception\OidcException;
-use Drenso\OidcBundle\Model\OidcTokens;
-use Drenso\OidcBundle\Model\OidcUserData;
 use Drenso\OidcBundle\OidcClientInterface;
-use Drenso\OidcBundle\OidcJwtHelper;
-use Drenso\OidcBundle\Security\Exception\InvalidJwtTokenException;
 use Drenso\OidcBundle\Security\Exception\OidcAuthenticationException;
 use Drenso\OidcBundle\Security\Token\OidcToken;
 use Drenso\OidcBundle\Security\UserProvider\OidcUserProviderInterface;
@@ -35,7 +31,6 @@ class OidcTokenExchangeAuthenticator implements AuthenticatorInterface
    */
   public function __construct(
     private readonly OidcClientInterface $oidcClient,
-    private readonly OidcJwtHelper $jwtHelper,
     private readonly OidcUserProviderInterface $oidcUserProvider,
     private readonly string $userIdentifierProperty = 'sub',
     private readonly bool $resourceProviderMode = false,
@@ -50,7 +45,6 @@ class OidcTokenExchangeAuthenticator implements AuthenticatorInterface
     return is_string($authHeader) && str_starts_with(trim($authHeader), 'Bearer ');
   }
 
-  /** @throws InvalidJwtTokenException */
   public function authenticate(Request $request): Passport
   {
     try {
@@ -64,52 +58,32 @@ class OidcTokenExchangeAuthenticator implements AuthenticatorInterface
         throw new AuthenticationException('Bearer token is empty.');
       }
 
-      // Create OidcTokens object with the access token
-      // Note: OidcTokens requires both access_token and id_token, so we use the same token for both
-      // This is a workaround since resource server tokens typically only have an access token
-      $tokens = new OidcTokens((object)[
-        'access_token' => $accessToken,
-        'id_token'     => $accessToken,
-      ]);
-
-      $userData       = null;
-      $userIdentifier = null;
-
+      // Validate token
       if ($this->resourceProviderMode) {
-        // Resource Provider Mode: Try JWT validation first (local, no network call)
-        // OidcJwtHelper::verifyAccessToken() gracefully handles opaque tokens internally
-        // First, try to parse as JWT to check if it's a JWT token
-        $parsedToken = OidcJwtHelper::parseToken($accessToken);
-        // Validate JWT signature, issuer, and expiration
-        // This will throw OidcAuthenticationException if JWT validation fails
-        // but gracefully handles opaque tokens (catches InvalidJwtTokenException internally)
-        $issuer  = $this->oidcClient->getIssuer();
-        $jwksUri = $this->oidcClient->getJwksUri();
-        $this->jwtHelper->verifyAccessToken($issuer, $jwksUri, $tokens, false);
-        // If we get here, JWT validation succeeded - extract user data from claims
-        $claims   = $parsedToken->claims()->all();
-        $userData = new OidcUserData($claims);
+        $tokens = $this->oidcClient->validateAccessTokenResourceProvider($accessToken);
 
-        // Extract user identifier from JWT claims
-        $userIdentifier = $parsedToken->claims()->get($this->userIdentifierProperty);
-        if (!is_string($userIdentifier) || $userIdentifier === '') {
-          // Try to get from claims array directly
-          $userIdentifier = $claims[$this->userIdentifierProperty] ?? null;
-          if ($userIdentifier !== null) {
-            $userIdentifier = (string)$userIdentifier;
-          }
-        }
+        // Extract user data from JWT claims
+        $result = $this->oidcClient->extractUserDataFromAccessTokenResourceProvider(
+          $tokens,
+          $this->userIdentifierProperty
+        );
+        $userData       = $result['userData'];
+        $userIdentifier = $result['userIdentifier'];
       } else {
-        // Token Exchange Mode: Use introspection only (original behavior)
+        // Token Exchange Mode: Create tokens structure and perform introspection
+        $tokens = $this->oidcClient->validateAccessTokenTokenExchange($accessToken);
+
+        // Perform introspection and validate token is active
         $introspectionData = $this->oidcClient->introspect($tokens, OidcTokenType::ACCESS);
 
         if (!$introspectionData->isActive()) {
           throw new AuthenticationException('Token is not active');
         }
 
-        // Get user information from introspection data
-        $userData       = new OidcUserData($introspectionData->getIntrospectionDataArray());
-        $userIdentifier = $introspectionData->getSub();
+        // Extract user data from introspection
+        $result         = $this->oidcClient->extractUserDataFromAccessTokenTokenExchange($introspectionData);
+        $userData       = $result['userData'];
+        $userIdentifier = $result['userIdentifier'];
       }
 
       // Ensure the user exists

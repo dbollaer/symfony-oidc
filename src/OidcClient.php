@@ -284,6 +284,134 @@ class OidcClient implements OidcClientInterface
   }
 
   /**
+   * Validate an access token in resource provider mode (JWT validation with audience check).
+   *
+   * @param string $accessToken The access token to validate
+   *
+   * @throws OidcConfigurationException
+   * @throws OidcConfigurationResolveException
+   * @throws OidcAuthenticationException|Security\Exception\InvalidJwtTokenException
+   * @throws OidcException
+   *
+   * @return OidcTokens Validated tokens
+   */
+  public function validateAccessTokenResourceProvider(string $accessToken): OidcTokens
+  {
+    // Decode access token to create UnvalidatedOidcTokens structure
+    // Note: OidcTokens requires both access_token and id_token, so we use the same token for both
+    // This is a workaround since resource server tokens typically only have an access token
+    $tokenData = (object)[
+      'access_token' => $accessToken,
+      'id_token'     => $accessToken,
+    ];
+
+    $unvalidatedTokens = new UnvalidatedOidcTokens($tokenData);
+
+    // Verify tokens using the standard verifyTokens method
+    $tokens = $this->verifyTokens($unvalidatedTokens, false);
+
+    // Additional audience validation if token has audience claim
+
+    $parsedToken = OidcJwtHelper::parseToken($accessToken);
+    if ($parsedToken->claims()->has('aud')) {
+      $audience      = $parsedToken->claims()->get('aud');
+      $audienceArray = is_array($audience) ? $audience : [$audience];
+
+      if (!in_array($this->clientId, $audienceArray, true)) {
+        throw new OidcAuthenticationException(sprintf(
+          'Token audience (%s) does not match client ID (%s)',
+          is_array($audience) ? implode(', ', $audience) : (string)$audience,
+          $this->clientId
+        ));
+      }
+    }
+
+    return $tokens;
+  }
+
+  /**
+   * Validate an access token in token exchange mode (creates tokens structure only).
+   *
+   * @param string $accessToken The access token to validate
+   *
+   * @throws OidcException
+   * @throws OidcConfigurationException
+   * @throws OidcConfigurationResolveException
+   * @throws OidcAuthenticationException
+   *
+   * @return OidcTokens Validated tokens
+   */
+  public function validateAccessTokenTokenExchange(string $accessToken): OidcTokens
+  {
+    // Decode access token to create UnvalidatedOidcTokens structure
+    $tokenData = (object)[
+      'access_token' => $accessToken,
+      'id_token'     => $accessToken,
+    ];
+
+    $unvalidatedTokens = new UnvalidatedOidcTokens($tokenData);
+
+    return new OidcTokens($unvalidatedTokens);
+  }
+
+  /**
+   * Extract user data from a validated access token in resource provider mode (JWT claims).
+   *
+   * @param OidcTokens $tokens                 The validated tokens
+   * @param string     $userIdentifierProperty The property name to use for user identifier extraction (default: 'sub')
+   *
+   * @throws OidcException
+   * @throws OidcConfigurationException
+   * @throws OidcConfigurationResolveException
+   * @throws OidcAuthenticationException
+   *
+   * @return array{userData: OidcUserData, userIdentifier: string}
+   */
+  public function extractUserDataFromAccessTokenResourceProvider(OidcTokens $tokens, string $userIdentifierProperty = 'sub'): array
+  {
+    // Resource Provider Mode: Extract data from JWT claims
+    $parsedToken = OidcJwtHelper::parseToken(token: $tokens->getAccessToken());
+    $claims      = $parsedToken->claims()->all();
+    $userData    = new OidcUserData($claims);
+
+    // Extract user identifier from JWT claims
+    $userIdentifier = $parsedToken->claims()->get($userIdentifierProperty);
+    if (!is_string($userIdentifier) || $userIdentifier === '') {
+      // Try to get from claims array directly
+      $userIdentifier = $claims[$userIdentifierProperty] ?? null;
+      if ($userIdentifier !== null) {
+        $userIdentifier = (string)$userIdentifier;
+      }
+    }
+
+    return [
+      'userData'       => $userData,
+      'userIdentifier' => $userIdentifier,
+    ];
+  }
+
+  /**
+   * Extract user data from introspection data in token exchange mode.
+   *
+   * @param OidcIntrospectionData $introspectionData The introspection data
+   *
+   * @throws OidcException
+   *
+   * @return array{userData: OidcUserData, userIdentifier: string}
+   */
+  public function extractUserDataFromAccessTokenTokenExchange(OidcIntrospectionData $introspectionData): array
+  {
+    // Token Exchange Mode: Extract user data from introspection
+    $userData       = new OidcUserData($introspectionData->getIntrospectionDataArray());
+    $userIdentifier = $introspectionData->getSub();
+
+    return [
+      'userData'       => $userData,
+      'userIdentifier' => $userIdentifier,
+    ];
+  }
+
+  /**
    * @throws OidcConfigurationException
    * @throws OidcConfigurationResolveException
    */
