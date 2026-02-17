@@ -8,6 +8,7 @@ use Drenso\OidcBundle\OidcJwtHelper;
 use Drenso\OidcBundle\OidcSessionStorage;
 use Drenso\OidcBundle\OidcUrlFetcher;
 use Drenso\OidcBundle\Security\OidcAuthenticator;
+use Drenso\OidcBundle\Security\OidcTokenExchangeAuthenticator;
 use Psr\Clock\ClockInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -19,6 +20,9 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 return function (ContainerConfigurator $configurator): void {
   $configurator->services()
     ->set(DrensoOidcExtension::AUTHENTICATOR_ID, OidcAuthenticator::class)
+    ->abstract()
+
+    ->set(DrensoOidcExtension::TOKEN_EXCHANGE_AUTHENTICATOR_ID, OidcTokenExchangeAuthenticator::class)
     ->abstract()
 
     ->set(DrensoOidcExtension::URL_FETCHER_ID, OidcUrlFetcher::class)
