@@ -26,9 +26,7 @@ use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPasspor
  */
 class OidcTokenExchangeAuthenticator implements AuthenticatorInterface
 {
-  /**
-   * @param OidcUserProviderInterface<\Symfony\Component\Security\Core\User\UserInterface> $oidcUserProvider
-   */
+  /** @param OidcUserProviderInterface<\Symfony\Component\Security\Core\User\UserInterface> $oidcUserProvider */
   public function __construct(
     private readonly OidcClientInterface $oidcClient,
     private readonly OidcUserProviderInterface $oidcUserProvider,
@@ -66,7 +64,6 @@ class OidcTokenExchangeAuthenticator implements AuthenticatorInterface
 
       // Introspect the token to validate it
       $introspectionData = $this->oidcClient->introspect($tokens, OidcTokenType::ACCESS);
-
 
       if (!$introspectionData->isActive()) {
         throw new AuthenticationException('Token is not active');
