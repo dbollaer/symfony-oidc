@@ -127,6 +127,7 @@ class OidcAuthenticator implements InteractiveAuthenticatorInterface, Authentica
       }
 
       $this->sessionStorage->storeAccessToken($authData->getAccessToken());
+
       return $passport;
     } catch (OidcException $e) {
       throw new OidcAuthenticationException('OIDC authentication failed', $e);

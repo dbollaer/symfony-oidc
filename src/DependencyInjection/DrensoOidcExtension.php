@@ -2,15 +2,14 @@
 
 namespace Drenso\OidcBundle\DependencyInjection;
 
-use Symfony\Component\Config\FileLocator;
-use Drenso\OidcBundle\OidcClientInterface;
-use Symfony\Contracts\Cache\CacheInterface;
-use Symfony\Component\DependencyInjection\Reference;
 use Drenso\OidcBundle\Http\TokenExchangeClientInterface;
+use Drenso\OidcBundle\OidcClientInterface;
+use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ChildDefinition;
+use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
-use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;
+use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\DependencyInjection\ConfigurableExtension;
 
 class DrensoOidcExtension extends ConfigurableExtension

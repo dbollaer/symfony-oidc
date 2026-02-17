@@ -110,5 +110,4 @@ class OidcSessionStorage
   {
     $this->getSession()->set($this->accessTokenKey(), $value);
   }
-
 }
