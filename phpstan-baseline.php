@@ -26,6 +26,18 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/src/OidcClient.php',
 ];
 $ignoreErrors[] = [
+	'message' => '#^Access to undefined constant Symfony\\\\Bundle\\\\SecurityBundle\\\\Security\\:\\:AUTHENTICATION_ERROR\\.$#',
+	'identifier' => 'classConstant.notFound',
+	'count' => 1,
+	'path' => __DIR__ . '/src/OidcClient.php',
+];
+$ignoreErrors[] = [
+	'message' => '#^Access to undefined constant Symfony\\\\Bundle\\\\SecurityBundle\\\\Security\\:\\:LAST_USERNAME\\.$#',
+	'identifier' => 'classConstant.notFound',
+	'count' => 1,
+	'path' => __DIR__ . '/src/OidcClient.php',
+];
+$ignoreErrors[] = [
 	'message' => '#^Method Drenso\\\\OidcBundle\\\\OidcUrlFetcher\\:\\:fetchUrl\\(\\) should return string but returns string\\|true\\.$#',
 	'identifier' => 'return.type',
 	'count' => 1,
