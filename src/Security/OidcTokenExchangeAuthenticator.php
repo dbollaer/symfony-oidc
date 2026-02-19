@@ -70,7 +70,7 @@ class OidcTokenExchangeAuthenticator implements AuthenticatorInterface
       $userIdentifier = $result['userIdentifier'];
 
       // Ensure the user exists
-      if (!$userIdentifier || $userIdentifier === '') {
+      if (!$userIdentifier) {
         throw new UserNotFoundException(
           sprintf('User identifier property (%s) yielded empty user identifier', $this->userIdentifierProperty));
       }

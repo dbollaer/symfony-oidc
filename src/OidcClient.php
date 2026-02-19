@@ -372,13 +372,10 @@ class OidcClient implements OidcClientInterface
     $userData    = new OidcUserData($claims);
 
     // Extract user identifier from JWT claims
-    $userIdentifier = $parsedToken->claims()->get($userIdentifierProperty);
-    if (!is_string($userIdentifier) || $userIdentifier === '') {
-      // Try to get from claims array directly
-      $userIdentifier = $claims[$userIdentifierProperty] ?? null;
-      if ($userIdentifier !== null) {
-        $userIdentifier = (string)$userIdentifier;
-      }
+    $rawIdentifier = $claims[$userIdentifierProperty] ?? null;
+    $userIdentifier = $rawIdentifier !== null ? (string)$rawIdentifier : null;
+    if ($userIdentifier === null || $userIdentifier === '') {
+      throw new OidcException(sprintf('Missing or empty user identifier claim "%s" in token', $userIdentifierProperty));
     }
 
     return [
