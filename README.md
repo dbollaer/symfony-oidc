@@ -274,8 +274,8 @@ security:
 
 | Option                     | Default    | Description                                                                |
 |----------------------------|------------|----------------------------------------------------------------------------|
-| `client`                   | `default`  | The configured OIDC client to use for token introspection                  |
-| `user_identifier_property` | `sub`      | The property from introspection data to use as user identifier             |
+| `client`                   | `default`  | The configured OIDC client to use for token validation                    |
+| `user_identifier_property` | `sub`      | The property from token data to use as user identifier                    |
 
 **Usage:**
 This authenticator automatically handles requests with `Authorization: Bearer <token>` headers using token introspection:

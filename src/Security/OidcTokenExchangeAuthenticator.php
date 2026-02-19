@@ -25,7 +25,9 @@ use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPasspor
  */
 class OidcTokenExchangeAuthenticator implements AuthenticatorInterface
 {
-  /** @param OidcUserProviderInterface<\Symfony\Component\Security\Core\User\UserInterface> $oidcUserProvider */
+  /**
+   * @param OidcUserProviderInterface<\Symfony\Component\Security\Core\User\UserInterface> $oidcUserProvider
+   */
   public function __construct(
     private readonly OidcClientInterface $oidcClient,
     private readonly OidcUserProviderInterface $oidcUserProvider,
@@ -70,7 +72,7 @@ class OidcTokenExchangeAuthenticator implements AuthenticatorInterface
       $userIdentifier = $result['userIdentifier'];
 
       // Ensure the user exists
-      if (!$userIdentifier) {
+      if (!$userIdentifier || $userIdentifier === '') {
         throw new UserNotFoundException(
           sprintf('User identifier property (%s) yielded empty user identifier', $this->userIdentifierProperty));
       }

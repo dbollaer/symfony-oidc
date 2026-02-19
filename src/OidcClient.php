@@ -25,9 +25,7 @@ use Symfony\Component\String\Slugger\AsciiSlugger;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 
-/**
- * This class implements the Oidc protocol.
- */
+/** This class implements the Oidc protocol. */
 class OidcClient implements OidcClientInterface
 {
   /** @var array<string, mixed> OIDC configuration values */
@@ -372,8 +370,13 @@ class OidcClient implements OidcClientInterface
     $userData    = new OidcUserData($claims);
 
     // Extract user identifier from JWT claims
-    $rawIdentifier = $claims[$userIdentifierProperty] ?? null;
-    $userIdentifier = $rawIdentifier !== null ? (string)$rawIdentifier : null;
+    $userIdentifier = $parsedToken->claims()->get($userIdentifierProperty);
+    if (!is_string($userIdentifier) || $userIdentifier === '') {
+      $userIdentifier = $claims[$userIdentifierProperty] ?? null;
+      if ($userIdentifier !== null) {
+        $userIdentifier = (string)$userIdentifier;
+      }
+    }
     if ($userIdentifier === null || $userIdentifier === '') {
       throw new OidcException(sprintf('Missing or empty user identifier claim "%s" in token', $userIdentifierProperty));
     }

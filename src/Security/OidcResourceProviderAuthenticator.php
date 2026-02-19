@@ -66,7 +66,7 @@ class OidcResourceProviderAuthenticator implements AuthenticatorInterface
       $userIdentifier = $result['userIdentifier'];
 
       // Ensure the user exists
-      if (!$userIdentifier) {
+      if (!$userIdentifier || $userIdentifier === '') {
         throw new UserNotFoundException(
           sprintf('User identifier property (%s) yielded empty user identifier', $this->userIdentifierProperty));
       }
