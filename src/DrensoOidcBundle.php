@@ -3,6 +3,7 @@
 namespace Drenso\OidcBundle;
 
 use Drenso\OidcBundle\Security\Factory\OidcFactory;
+use Drenso\OidcBundle\Security\Factory\OidcResourceProviderFactory;
 use Drenso\OidcBundle\Security\Factory\OidcTokenExchangeFactory;
 use Symfony\Bundle\SecurityBundle\DependencyInjection\SecurityExtension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -19,5 +20,6 @@ class DrensoOidcBundle extends Bundle
     assert($extension instanceof SecurityExtension);
     $extension->addAuthenticatorFactory(new OidcFactory());
     $extension->addAuthenticatorFactory(new OidcTokenExchangeFactory());
+    $extension->addAuthenticatorFactory(new OidcResourceProviderFactory());
   }
 }
