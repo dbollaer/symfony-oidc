@@ -89,4 +89,59 @@ interface OidcClientInterface
    * @throws OidcException
    */
   public function introspect(OidcTokens $tokens, ?OidcTokenType $tokenType = null): OidcIntrospectionData;
+
+  /**
+   * Validate an access token in resource provider mode (JWT validation with audience check).
+   *
+   * @param string $accessToken The access token to validate
+   *
+   * @throws OidcException
+   * @throws OidcConfigurationException
+   * @throws OidcConfigurationResolveException
+   * @throws Security\Exception\OidcAuthenticationException
+   *
+   * @return OidcTokens Validated tokens
+   */
+  public function validateAccessTokenResourceProvider(string $accessToken): OidcTokens;
+
+  /**
+   * Validate an access token in token exchange mode (creates tokens structure only).
+   *
+   * @param string $accessToken The access token to validate
+   *
+   * @throws OidcException
+   * @throws OidcConfigurationException
+   * @throws OidcConfigurationResolveException
+   * @throws Security\Exception\OidcAuthenticationException
+   *
+   * @return OidcTokens Validated tokens
+   */
+  public function validateAccessTokenTokenExchange(string $accessToken): OidcTokens;
+
+  /**
+   * Extract user data from a validated access token in resource provider mode (JWT claims).
+   *
+   * @param OidcTokens $tokens                 The validated tokens
+   * @param string     $userIdentifierProperty The property name to use for user identifier extraction (default: 'sub')
+   *
+   * @throws OidcException
+   * @throws OidcConfigurationException
+   * @throws OidcConfigurationResolveException
+   * @throws Security\Exception\OidcAuthenticationException
+   *
+   * @return array{userData: OidcUserData, userIdentifier: string}
+   */
+  public function extractUserDataFromAccessTokenResourceProvider(OidcTokens $tokens,
+    string $userIdentifierProperty = 'sub'): array;
+
+  /**
+   * Extract user data from introspection data in token exchange mode.
+   *
+   * @param OidcIntrospectionData $introspectionData The introspection data
+   *
+   * @throws OidcException
+   *
+   * @return array{userData: OidcUserData, userIdentifier: string}
+   */
+  public function extractUserDataFromAccessTokenTokenExchange(OidcIntrospectionData $introspectionData): array;
 }

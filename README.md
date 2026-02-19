@@ -253,6 +253,118 @@ If for some reason you have several OIDC clients configured and need to retrieve
 
 The locator will throw an OidcClientNotFoundException when the requested client is not found. When called without an argument, it will return the configured default client.
 
+### Token Exchange Authenticator
+
+The `OidcTokenExchangeAuthenticator` is designed for API authentication using access tokens obtained through OAuth 2.0 Token Exchange (RFC 8693). Unlike the regular `OidcAuthenticator` which handles the full OIDC login flow, this authenticator only validates Bearer tokens in the Authorization header.
+
+**Configuration Example:**
+
+```yaml
+security:
+  firewalls:
+    api:
+      pattern: ^/api/
+      oidc_token_exchange:
+        client: default
+        user_identifier_property: sub
+      stateless: true
+```
+
+**Available Options:**
+
+| Option                     | Default    | Description                                                                |
+|----------------------------|------------|----------------------------------------------------------------------------|
+| `client`                   | `default`  | The configured OIDC client to use for token validation                    |
+| `user_identifier_property` | `sub`      | The property from token data to use as user identifier                    |
+
+**Usage:**
+This authenticator automatically handles requests with `Authorization: Bearer <token>` headers using token introspection:
+
+1. Extract the Bearer token from the Authorization header
+2. Introspect the token using the configured OIDC client (remote API call)
+3. Validate that the token is active
+4. Create or load the user based on the introspection data
+5. Return a 401 JSON response if authentication fails
+
+**Example API Request:**
+```bash
+curl -H "Authorization: Bearer your_access_token_here" https://your-app.com/api/protected-endpoint
+```
+
+**Response on Success:**
+- Request continues normally with authenticated user
+
+**Response on Failure:**
+```json
+{
+  "message": "Token is not active"
+}
+```
+
+### Resource Provider Authenticator
+
+The `OidcResourceProviderAuthenticator` is designed for API authentication using JWT access tokens. Unlike the `OidcTokenExchangeAuthenticator` which uses token introspection, this authenticator validates JWT tokens locally using the provider's JWKS (JSON Web Key Set). This mode is useful when:
+
+- You're acting as a resource server validating tokens issued by your OIDC provider
+- You want to avoid the network overhead of token introspection calls
+- Your OIDC provider issues JWT access tokens that can be validated locally
+
+**Configuration Example:**
+
+```yaml
+security:
+  firewalls:
+    api:
+      pattern: ^/api/
+      oidc_resource_provider:
+        client: default
+        user_identifier_property: sub
+      stateless: true
+```
+
+**Available Options:**
+
+| Option                     | Default    | Description                                                                |
+|----------------------------|------------|----------------------------------------------------------------------------|
+| `client`                   | `default`  | The configured OIDC client to use for token validation                    |
+| `user_identifier_property` | `sub`      | The property from JWT claims to use as user identifier                    |
+
+**How it works:**
+
+1. Extract the Bearer token from the Authorization header
+2. Validate the JWT token locally (signature, issuer, expiration, audience) using the provider's JWKS
+3. Extract user data from JWT claims
+4. Create or load the user based on the JWT claims
+5. Return a 401 JSON response if authentication fails
+
+**Key differences from Token Exchange Authenticator:**
+
+- **No network calls**: JWT validation happens locally, no introspection endpoint calls
+- **Faster**: Avoids the latency of remote API calls
+- **Requires JWT tokens**: Only works with JWT access tokens (not opaque tokens)
+- **Local validation**: Token signature, issuer, expiration, and audience are validated using cached JWKS
+
+**Requirements:**
+
+- Your OIDC provider must issue JWT access tokens (not opaque tokens)
+- The OIDC client must be configured with the correct `well_known_url` to fetch JWKS
+- The token must include the required claims (e.g., `sub` for user identification)
+
+**Example API Request:**
+```bash
+curl -H "Authorization: Bearer your_jwt_access_token_here" https://your-app.com/api/protected-endpoint
+```
+
+**Response on Success:**
+- Request continues normally with authenticated user
+
+**Response on Failure:**
+```json
+{
+  "message": "OIDC authentication failed"
+}
+```
+
 ### Leeway
 
 This bundle uses a 300 seconds leeway when validating the access tokens. This value can be configured with the `token_leeway_seconds` client option.
