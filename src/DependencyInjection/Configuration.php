@@ -81,6 +81,10 @@ class Configuration implements ConfigurationInterface
                 ->booleanNode('disable_nonce')
                   ->defaultFalse()
                 ->end() // disable_nonce
+                ->booleanNode('verify_access_token')
+                  ->defaultTrue()
+                  ->info('Whether to verify the access token. Set to false when the access token is issued by a different provider (e.g. token exchange).')
+                ->end() // verify_access_token
                 ->arrayNode('token_exchange_clients')
                   ->useAttributeAsKey('name')
                   ->arrayPrototype()

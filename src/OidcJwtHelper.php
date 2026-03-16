@@ -67,7 +67,8 @@ class OidcJwtHelper
     protected readonly string $clientId,
     protected readonly ?int $jwksCacheTime = 3600,
     protected readonly int $leewaySeconds = 300,
-    protected readonly ?OidcTokenConstraintProviderInterface $oidcTokenConstraintProvider = null)
+    protected readonly ?OidcTokenConstraintProviderInterface $oidcTokenConstraintProvider = null,
+    protected readonly bool $verifyAccessToken = true)
   {
   }
 
@@ -103,7 +104,9 @@ class OidcJwtHelper
   public function verifyTokens(string $issuer, string $jwksUri, OidcTokens $tokens, bool $verifyNonce): void
   {
     $this->verifyIdToken($issuer, $jwksUri, $tokens, $verifyNonce);
-    $this->verifyAccessToken($issuer, $jwksUri, $tokens, $verifyNonce);
+    if ($this->verifyAccessToken) {
+      $this->verifyAccessToken($issuer, $jwksUri, $tokens, $verifyNonce);
+    }
   }
 
   /**

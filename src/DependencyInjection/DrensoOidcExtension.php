@@ -85,7 +85,8 @@ class DrensoOidcExtension extends ConfigurableExtension
       ->addArgument($config['client_id'])
       ->addArgument($config['jwks_cache_time'])
       ->addArgument($config['token_leeway_seconds'])
-      ->addArgument($additionalTokenConstraintsProviderId ? new Reference($additionalTokenConstraintsProviderId) : null);
+      ->addArgument($additionalTokenConstraintsProviderId ? new Reference($additionalTokenConstraintsProviderId) : null)
+      ->addArgument($config['verify_access_token']);
 
     $clientId          = sprintf('%s.%s', self::CLIENT_ID, $name);
     $wellKnownParserId = $config['well_known_parser'];

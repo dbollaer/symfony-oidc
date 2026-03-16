@@ -78,6 +78,7 @@ drenso_oidc:
             #custom_client_headers: []
             #code_challenge_method: ~ # Code challenge method, can be null, 'S256' or 'plain'
             #disable_nonce: false # Set to true when nonce verification should not be used
+            #verify_access_token: true # Set to false when the access token is from another issuer (e.g. token exchange)
 
         # Add any extra client
         #link: # Will be accessible using $linkOidcClient
